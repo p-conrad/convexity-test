@@ -1,7 +1,7 @@
 SRCDIR := ./src
 
 DC := dmd
-DFLAGS := -debug -g -unittest -inline -wi -I$(SRCDIR)
+DFLAGS := -debug -g -unittest -inline -wi -I$(SRCDIR) -main
 LD := dmd
 
 SOURCES := $(wildcard $(SRCDIR)/*.d)
@@ -20,7 +20,7 @@ build: $(OBJECTS)
 	$(LD) $(LDFLAGS) $^ -of$(EXECUTABLE)
 
 .PHONY: run
-tests: build
+run: build
 	./$(EXECUTABLE)
 
 .PHONY: clean
