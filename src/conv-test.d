@@ -1,39 +1,68 @@
 module convtest;
 
-// Curvature types of an expression
-enum Curvature { CONCAVE, CONVEX, INCREASING, DECREASING, LINEAR, UNKNOWN }
+// Function properties
+enum Curvature { concave, convex, linear, unspecified }
+enum Gradient { increasing, decreasing, constant, unspecified }
+
+// A tuple, describing both properties of a given expression
+import std.typecons : Tuple;
+alias Property = Tuple!(Curvature, "curv", Gradient, "grad");
+
+// checking for some basic properties
+@property
+bool isNondecreasing(Gradient g) {
+	return ((g == Gradient.increasing) || (g == Gradient.constant));
+}
+
+@property
+bool isNonIncreasing(Gradient g) {
+	return ((g == Gradient.decreasing) || (g == Gradient.constant));
+}
+
+@property
+bool isConvex(Curvature c) {
+	return ((c == Curvature.convex) || (c == Curvature.linear));
+}
+
+@property
+bool isConcave(Curvature c) {
+	return ((c == Curvature.concave) || (c == Curvature.linear));
+}
 
 // An expression, consisting of an identifier string and a variable number
 // of sub-expressions
 struct Expression {
 	string identifier;
 	Expression[] children;
+
+	bool hasChildren() { return (children.length > 0); }
 }
 
 // To check for convexity, certain rules are being applied. These are,
 // by definition, functions taking an expression as argument and
-// returning the curvature of that expression.
-alias Rule = Curvature function(Expression);
+// returning the property of that expression.
+alias Rule = Property function(Expression);
 
 // Apply a certain rule to a given expression
-Curvature applyRule(Rule rule, Expression e) {
+Property applyRule(Rule rule, Expression e) {
 	return rule(e);
 }
 
-// a sample rule, traversing the expression tree und simply saying UNKNOWN
-Curvature sampleRule(Expression exp) {
-	if (exp.children.length == 0)
-		return Curvature.UNKNOWN;
+// a sample rule, traversing the expression tree und simply saying
+// unspecified
+Property sampleRule(Expression exp) {
+	if (!exp.hasChildren())
+		return Property(Curvature.unspecified, Gradient.unspecified);
 
 	// post-order traverse the expression, determining the curvature of
 	// all children
-	auto subCurv = new Curvature[exp.children.length];
-	foreach (i, ref c; subCurv)
+	auto subProp = new Property[exp.children.length];
+	foreach (i, ref c; subProp)
 		c = sampleRule(exp.children[i]);
 
 	/* [some magic involving the results obtained from the previous step] */
 
-	return Curvature.UNKNOWN;
+	return Property(Curvature.unspecified, Gradient.unspecified);
 }
 
 unittest {
@@ -55,8 +84,9 @@ unittest {
 
 	// Basic test: Walking the tree works without raising exceptions
 	// and sampleRule yields the expected results
-	Curvature result;
+	Property result;
 	import std.exception;
 	assertNotThrown( result = applyRule(&sampleRule, simpleExpression) );
-	assert (result == Curvature.UNKNOWN);
+	assert (result.curv == Curvature.unspecified);
+	assert (result.grad == Gradient.unspecified);
 }
