@@ -1,42 +1,13 @@
-module convtest;
-
-// Function properties
-enum Curvature { concave, convex, linear, unspecified }
-enum Gradient { increasing, decreasing, constant, unspecified }
-
-// A tuple, describing both properties of a given expression
-import std.typecons : Tuple;
-alias Property = Tuple!(Curvature, "curv", Gradient, "grad");
-
-// checking for some basic properties
-@property
-bool isNondecreasing(Gradient g) {
-	return ((g == Gradient.increasing) || (g == Gradient.constant));
-}
-
-@property
-bool isNonIncreasing(Gradient g) {
-	return ((g == Gradient.decreasing) || (g == Gradient.constant));
-}
-
-@property
-bool isConvex(Curvature c) {
-	return ((c == Curvature.convex) || (c == Curvature.linear));
-}
-
-@property
-bool isConcave(Curvature c) {
-	return ((c == Curvature.concave) || (c == Curvature.linear));
-}
+import property;
 
 // An expression, consisting of an identifier string and a variable number
 // of sub-expressions
 struct Expression {
 	string identifier;
 	Expression[] children;
-
-	bool hasChildren() { return (children.length > 0); }
 }
+
+bool hasChildren(Expression e) { return (e.children.length > 0); }
 
 // To check for convexity, certain rules are being applied. These are,
 // by definition, functions taking an expression as argument and
@@ -50,15 +21,15 @@ Property applyRule(Rule rule, Expression e) {
 
 // a sample rule, traversing the expression tree und simply saying
 // unspecified
-Property sampleRule(Expression exp) {
-	if (!exp.hasChildren())
+Property sampleRule(Expression e) {
+	if (!e.hasChildren())
 		return Property(Curvature.unspecified, Gradient.unspecified);
 
-	// post-order traverse the expression, determining the curvature of
+	// post-order traverse the expression, determining theature of
 	// all children
-	auto subProp = new Property[exp.children.length];
+	auto subProp = new Property[e.children.length];
 	foreach (i, ref c; subProp)
-		c = sampleRule(exp.children[i]);
+		c = sampleRule(e.children[i]);
 
 	/* [some magic involving the results obtained from the previous step] */
 
@@ -87,6 +58,5 @@ unittest {
 	Property result;
 	import std.exception;
 	assertNotThrown( result = applyRule(&sampleRule, simpleExpression) );
-	assert (result.curv == Curvature.unspecified);
-	assert (result.grad == Gradient.unspecified);
+	assert (result == Property(Curvature.unspecified, Gradient.unspecified));
 }
