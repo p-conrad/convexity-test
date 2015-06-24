@@ -23,7 +23,7 @@ bool isConcave(Curvature c) {
 }
 
 // wrapper functions
-bool isNonDecreasing(Property p) { return isNonDecreasing(p.gradient); }
-bool isNonIncreasing(Property p) { return isNonIncreasing(p.gradient); }
+bool isNonDecreasing(Property p) { return isNonDecreasing(p.grad); }
+bool isNonIncreasing(Property p) { return isNonIncreasing(p.grad); }
 bool isConvex(Property p) { return isConvex(p.curv); }
 bool isConcave(Property p) { return isConcave(p.curv); }
