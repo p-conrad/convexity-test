@@ -1,13 +1,5 @@
 import property;
-
-// An expression, consisting of an identifier string and a variable number
-// of sub-expressions
-struct Expression {
-	string identifier;
-	Expression[] children;
-}
-
-bool hasChildren(Expression e) { return (e.children.length > 0); }
+import expression;
 
 // To check for convexity, certain rules are being applied. These are,
 // by definition, functions taking an expression as argument and
