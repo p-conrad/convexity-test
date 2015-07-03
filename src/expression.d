@@ -27,6 +27,9 @@ Expression nthChild(Expression e, size_t n) {
 Expression left(Expression e) { return e.nthChild(0); }
 Expression right(Expression e) { return e.nthChild(1); }
 
+// Returns the first child of an expression, to be used in cases where there is only one
+Expression child(Expression e) { return e.left; }
+
 // Returns the numeric value of an expression identifier if it is a number or raises an
 // exception otherwise
 double getNumericValue(Identifier e) {
@@ -55,8 +58,30 @@ bool isNumber(Identifier e) {
 unittest {
 	assert (isNumber("2.5"));
 	assert (!isNumber("foo"));
+	assert (isNumber("1e-4"));
+}
+
+bool isIdentifier(Identifier i) {
+	import std.array : front;
+	import std.uni : isAlpha;
+	return (i.front.isAlpha() && !isFunctionOrOperator(i));
+}
+
+bool isFunctionOrOperator(Identifier i) {
+	import ruleset : applicableRules;
+	import std.algorithm : any;
+	return any!(a => a == i)(applicableRules.keys);
+}
+
+unittest {
+	assert ("+".isFunctionOrOperator);
+	assert ("ln".isFunctionOrOperator);
+	assert (!"ln ".isFunctionOrOperator);
+	assert (!"2".isFunctionOrOperator);
+	assert (!"".isFunctionOrOperator);
 }
 
 // wrapper functions
 bool isNumber(Expression e) { return isNumber(e.id); }
 double getNumericValue(Expression e) { return getNumericValue(e.id); }
+bool isIdentifier(Expression e) { return isIdentifier(e.id); }
