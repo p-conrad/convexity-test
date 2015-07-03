@@ -5,11 +5,6 @@ import expression;
 // taking an expression as argument and returning the property of that expression.
 alias Rule = Property function(Expression);
 
-// Apply a certain rule to a given expression
-Property applyRule(Rule rule, Expression e) {
-	return rule(e);
-}
-
 // Aliases to simplify the unit tests
 version (unittest) {
 	alias E = Expression;
