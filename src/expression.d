@@ -1,10 +1,10 @@
 // data type used as an expression identifier
-alias id_t = string;
+alias Identifier = string;
 
-// An expression, consisting of an identifier id_t and a variable number
+// An expression, consisting of an identifier Identifier and a variable number
 // of sub-expressions
 struct Expression {
-	id_t identifier;
+	Identifier id;
 	Expression[] children;
 }
 
@@ -29,7 +29,7 @@ Expression right(Expression e) { return e.nthChild(1); }
 
 // Returns the numeric value of an expression identifier if it is a number or raises an
 // exception otherwise
-double getNumericValue(id_t e) {
+double getNumericValue(Identifier e) {
 	import std.conv : to;
 	return to!double(e);
 }
@@ -41,7 +41,7 @@ unittest {
 }
 
 // Returns true if an expression identifier is a number
-bool isNumber(id_t e) {
+bool isNumber(Identifier e) {
 	import std.conv : ConvException;
 	try {
 		getNumericValue(e);
@@ -58,5 +58,5 @@ unittest {
 }
 
 // wrapper functions
-bool isNumber(Expression e) { return isNumber(e.identifier); }
-double getNumericValue(Expression e) { return getNumericValue(e.identifier); }
+bool isNumber(Expression e) { return isNumber(e.id); }
+double getNumericValue(Expression e) { return getNumericValue(e.id); }
