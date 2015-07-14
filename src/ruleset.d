@@ -42,12 +42,12 @@ Property analyze(Expression e) {
 }
 
 unittest {
-	assert (analyze(E("2", [])) == P(linear, constant));
-	assert (analyze(E("x", [])) == P(linear, increasing));
+	assert (analyze(E("2")) == P(linear, constant));
+	assert (analyze(E("x")) == P(linear, increasing));
 	// should be (convex, decreasing) but turns out unknown because of insufficient ruleset for now
-	assert (analyze(E("ln", [E("/", [E("1", []), E("x", [])])])) == P(unknown, unspecified));
+	assert (analyze(E("ln", [E("/", [E("1"), E("x")])])) == P(unknown, unspecified));
 	// should be convex, however by now there is no rule to cover that case
-	assert (analyze(E("*", [E("x", []), E("ln", [E("x", [])])])) == P(unknown, unspecified));
+	assert (analyze(E("*", [E("x"), E("ln", [E("x")])])) == P(unknown, unspecified));
 }
 
 // a rule dealing with simple arithmetic operations
@@ -122,33 +122,33 @@ Property arithmeticRule(Expression e) {
 
 unittest {
 	// two numbers
-	assert (arithmeticRule(E("+", [E("2.5", []), E("-2", [])])) == P(linear, constant));
+	assert (arithmeticRule(E("+", [E("2.5"), E("-2")])) == P(linear, constant));
 
 	// unary minus and plus
-	assert (arithmeticRule(E("-", [E("ln", [E("x", [])])])) == P(convex, unspecified));
-	assert (arithmeticRule(E("+", [E("ln", [E("x", [])])])) == P(concave, unspecified));
+	assert (arithmeticRule(E("-", [E("ln", [E("x")])])) == P(convex, unspecified));
+	assert (arithmeticRule(E("+", [E("ln", [E("x")])])) == P(concave, unspecified));
 
 	// addition, subtraction, multiplication
-	assert (arithmeticRule(E("+", [E("ln", [E("x", [])]), E("2", [])])) == P(concave, unspecified));
-	assert (arithmeticRule(E("-", [E("ln", [E("x", [])]), E("2", [])])) == P(concave, unspecified));
-	assert (arithmeticRule(E("-", [E("ln", [E("x", [])]), E("-2", [])])) == P(concave, unspecified));
-	assert (arithmeticRule(E("-", [E("2", []), E("ln", [E("x", [])])])) == P(convex, unspecified));
-	assert (arithmeticRule(E("*", [E("ln", [E("x", [])]), E("2", [])])) == P(concave, unspecified));
-	assert (arithmeticRule(E("*", [E("ln", [E("x", [])]), E("-2", [])])) == P(convex, unspecified));
-	assert (arithmeticRule(E("/", [E("1", []), E("ln", [E("x", [])])])) == P(convex, unspecified));
-	assert (arithmeticRule(E("/", [E("1", []), E("-", [E("ln", [E("x", [])])])])) == P(concave, unspecified));
+	assert (arithmeticRule(E("+", [E("ln", [E("x")]), E("2")])) == P(concave, unspecified));
+	assert (arithmeticRule(E("-", [E("ln", [E("x")]), E("2")])) == P(concave, unspecified));
+	assert (arithmeticRule(E("-", [E("ln", [E("x")]), E("-2")])) == P(concave, unspecified));
+	assert (arithmeticRule(E("-", [E("2"), E("ln", [E("x")])])) == P(convex, unspecified));
+	assert (arithmeticRule(E("*", [E("ln", [E("x")]), E("2")])) == P(concave, unspecified));
+	assert (arithmeticRule(E("*", [E("ln", [E("x")]), E("-2")])) == P(convex, unspecified));
+	assert (arithmeticRule(E("/", [E("1"), E("ln", [E("x")])])) == P(convex, unspecified));
+	assert (arithmeticRule(E("/", [E("1"), E("-", [E("ln", [E("x")])])])) == P(concave, unspecified));
 
 	// division by linear functions, using some more complex examples
-	assert (arithmeticRule(E("/", [E("1", []), E("x", [])])) == P(convex, decreasing));
-	assert (arithmeticRule(E("/", [E("1", []), E("-", [E("x", [])])])) == P(concave, increasing));
-	assert (arithmeticRule(E("/", [E("1", []), E("+", [E("*", [E("-2", []), E("x", [])]), E("5", [])])]))
-				== P(concave, increasing));
-	assert (arithmeticRule(E("/", [E("1", []), E("-", [E("+", [E("*", [E("-2", []), E("x", [])]),
-							E("5", [])])])])) == P(convex, decreasing));
-	assert (arithmeticRule(E("/", [E("-1", []), E("+", [E("*", [E("-2", []), E("x", [])]),
-							E("5", [])])])) == P(convex, decreasing));
-	assert (arithmeticRule(E("/", [E("-1", []), E("-", [E("+", [E("*", [E("-2", []), E("x", [])]),
-							E("5", [])])])])) == P(concave, increasing));
+	assert (arithmeticRule(E("/", [E("1"), E("x")])) == P(convex, decreasing));
+	assert (arithmeticRule(E("/", [E("1"), E("-", [E("x")])])) == P(concave, increasing));
+	assert (arithmeticRule(E("/", [E("1"), E("+", [E("*", [E("-2"), E("x")]), E("5")])]))
+			== P(concave, increasing));
+	assert (arithmeticRule(E("/", [E("1"), E("-", [E("+", [E("*", [E("-2"), E("x")]), E("5")])])]))
+			== P(convex, decreasing));
+	assert (arithmeticRule(E("/", [E("-1"), E("+", [E("*", [E("-2"), E("x")]), E("5")])]))
+			== P(convex, decreasing));
+	assert (arithmeticRule(E("/", [E("-1"), E("-", [E("+", [E("*", [E("-2"), E("x")]), E("5")])])]))
+			== P(concave, increasing));
 }
 
 // properties of already known functions, to be used with the composition rule
@@ -180,6 +180,6 @@ Property compositionRule(Expression e) {
 }
 
 unittest {
-	assert (compositionRule(E("exp", [E("*", [E("2", []), E("x", [])])])) == P(convex, unspecified));
-	assert (compositionRule(E("exp", [E("-", [E("ln", [E("*", [E("2", []), E("x", [])])])])])) == P(convex, unspecified));
+	assert (compositionRule(E("exp", [E("*", [E("2"), E("x")])])) == P(convex, unspecified));
+	assert (compositionRule(E("exp", [E("-", [E("ln", [E("*", [E("2"), E("x")])])])])) == P(convex, unspecified));
 }

@@ -6,6 +6,12 @@ alias Identifier = string;
 struct Expression {
 	Identifier id;
 	Expression[] children;
+
+	this (Identifier id) { this(id, []); }
+	this (Identifier id, Expression[] children) {
+		this.id = id;
+		this.children = children;
+	}
 }
 
 // Returns the number of cildren in an expression, namely the length of its children array
