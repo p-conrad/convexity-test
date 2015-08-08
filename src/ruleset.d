@@ -27,6 +27,7 @@ enum Rule[][Identifier] applicableRules = [
 	"/"		:	[&arithmeticRule],
 	"ln"	:	[&compositionRule],
 	"exp"	:	[&compositionRule]
+//	"abs"	:	[&emptyRule]
 ];
 
 // The algorithm checking for convexity
@@ -154,8 +155,16 @@ unittest {
 // properties of already known functions, to be used with the composition rule
 enum Property[string] functionProperties = [
 	"ln"	:	Property(Curvature.concave, Gradient.increasing),
-	"exp"	:	Property(Curvature.convex, Gradient.increasing)
+	"exp"	:	Property(Curvature.convex, Gradient.increasing),
 ];
+
+unittest {
+	// make sure that for every function in functionProperties there is a rule defined in
+	// applicableRules
+	import std.algorithm : all;
+	assert (all!((a) => a in applicableRules)(functionProperties.keys));
+	assert (all!((a) => applicableRules[a].length >= 1)(functionProperties.keys));
+}
 
 // composition rules to be used for a function f(x) = g(h(x))
 Property compositionRule(Expression e) {
