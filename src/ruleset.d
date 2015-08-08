@@ -26,8 +26,8 @@ enum Rule[][Identifier] applicableRules = [
 	"*"		:	[&arithmeticRule],
 	"/"		:	[&arithmeticRule],
 	"ln"	:	[&compositionRule],
-	"exp"	:	[&compositionRule]
-//	"abs"	:	[&emptyRule]
+	"exp"	:	[&compositionRule],
+	"abs"	:	[&emptyRule]
 ];
 
 // The algorithm checking for convexity
@@ -191,4 +191,9 @@ Property compositionRule(Expression e) {
 unittest {
 	assert (compositionRule(E("exp", [E("*", [E("2"), E("x")])])) == P(convex, unspecified));
 	assert (compositionRule(E("exp", [E("-", [E("ln", [E("*", [E("2"), E("x")])])])])) == P(convex, unspecified));
+}
+
+// an empty rule for expressions which should not occur due to transformations (e.g. abs)
+Property emptyRule(Expression e) {
+	assert (0, "emptyRule has been called");
 }
