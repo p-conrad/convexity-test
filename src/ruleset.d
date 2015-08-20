@@ -1,5 +1,6 @@
 import property;
 import expression;
+import classifier;
 
 // To check for convexity, certain rules are being applied. These are, by definition, functions
 // taking an expression as argument and returning the property of that expression.
@@ -33,10 +34,10 @@ enum Rule[][Identifier] applicableRules = [
 // The algorithm checking for convexity
 Property analyze(Expression e) {
 	if (isNumber(e)) return Property(Curvature.linear, Gradient.constant);
-	if (isIdentifier(e)) return Property(Curvature.linear, Gradient.increasing);
+	if (isArgument(e)) return Property(Curvature.linear, Gradient.increasing);
 
 	assert (e.id in applicableRules);
-	
+
 	// simple version: take the first available rule and return its result
 	// better: apply all available rules, then pick/combine their best result [TODO]
 	return applicableRules[e.id][0](e);
@@ -52,9 +53,14 @@ unittest {
 }
 
 // a rule dealing with simple arithmetic operations
-Property arithmeticRule(Expression e) {
-	// We are expecting the operators to be binary
-	assert (e.childCount <= 2);
+Property arithmeticRule(Expression e)
+in {
+	import std.algorithm : any;
+	assert (any!(a => a == e.id)(["+", "-", "*", "/"]));
+}
+body {
+	// We are expecting the operators to be binary for now (?)
+	assert (e.childCount <= 2 && e.childCount > 0);
 
 	// unary minus
 	if (e.id == "-" && e.childCount == 1)
@@ -68,57 +74,21 @@ Property arithmeticRule(Expression e) {
 	if (isNumber(e.left) && isNumber(e.right))
 		return Property(Curvature.linear, Gradient.constant);
 
-	// TODO: deal with expressions whose children are both not numbers; say unspecified for now
-	if (!(isNumber(e.left) || isNumber(e.right)))
+	auto left = classify(e.left);
+	auto right = classify(e.right);
+
+	import arithmetics;
+	if (e.id == "+") return addition(e, left, right);
+	if (e.id == "-") return subtraction(e, left, right);
+
+	// The result of multiplying / dividing two functions cannot (yet?) be determined by arithmeticRule
+	if (!(left.isConstantValue || right.isConstantValue))
 		return Property(Curvature.unspecified, Gradient.unspecified);
 
-	// Find the scalar and analyze the expression; save the result for later use
-	double number = isNumber(e.left) ? getNumericValue(e.left) : getNumericValue(e.right);
-	Property result = analyze(isNumber(e.left) ? e.right : e.left);
+	if (e.id == "*") return multiplication(e, left, right);
+	if (e.id == "/") return division(e, left, right);
 
-	assert (number != 0); // should be incorrect syntax
-
-	// Addition with a scalar always preserves the properties of the function they are applied to
-	if (e.id == "+") return result;
-
-	// Subtraction with a scalar preserves the properties if the scalar is on the right side,
-	// otherwise reverse them
-	if (e.id == "-") {
-		if (isNumber(e.right)) return result;
-		return result.complement;
-	}
-
-	// Multiplication with a scalar preserves the properties if the scalar is larger than 0 and
-	// reverse them if it is smaller
-	if (e.id == "*") {
-		if (number > 0) return result;
-		return result.complement;
-	}
-
-	// Division with a scalar depends on both the side of the scalar and whether it is smaller or
-	// larger than 0; also special rules apply if the function divided by has linear property
-	if (e.id == "/") {
-		if (isNumber(e.left)) {
-			// First check whether the function divided is linear. The curvature and gradient need
-			// to be adjusted accordingly
-			if (number > 0 && result.isLinear) {
-				if (result.isIncreasing) return Property(Curvature.convex, Gradient.decreasing);
-				return Property(Curvature.concave, Gradient.increasing);
-			}
-			if (number < 0 && result.isLinear) {
-				if (result.isIncreasing) return Property(Curvature.concave, Gradient.increasing);
-				return Property(Curvature.convex, Gradient.decreasing);
-			}
-			// for non-linear functions the result only depends on whether the number is smaller or
-			// larger than zero
-			if (number > 0) return result.complement;
-			if (number < 0) return result;
-		}
-		if (isNumber(e.right) && number > 0) return result;
-		if (isNumber(e.right) && number < 0) return result.complement;
-	}
-
-	return Property(Curvature.unspecified, Gradient.unspecified);
+	assert (0);
 }
 
 unittest {
@@ -170,7 +140,7 @@ unittest {
 Property compositionRule(Expression e) {
 	// expressions to be checked with this rule need to have exactly one child: h(x), while g is the
 	// expression itself
-	// TODO: A function may actually have more than one arguments
+	// TODO: A function may actually have more than one argument
 	assert (e.childCount == 1);
 
 	auto parent = functionProperties[e.id];

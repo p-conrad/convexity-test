@@ -1,6 +1,6 @@
 // Function properties
-enum Curvature { concave, convex, linear, unspecified }
-enum Gradient { increasing, decreasing, constant, unspecified }
+enum Curvature { unspecified, concave, convex, linear }
+enum Gradient { unspecified, increasing, decreasing, constant }
 
 // A tuple, describing both properties of a given expression
 import std.typecons : Tuple;
@@ -60,3 +60,57 @@ Property complement(Property p) {
 // Returns the single complement of either a Curvature or a Gradient
 Curvature complement(Curvature c) { return cComplement[c]; }
 Gradient complement(Gradient g) { return gComplement[g]; }
+
+// Returns true if two curvatures equal each other
+bool curvatureEquals(Curvature a, Curvature b) {
+	return (a.isConvex && b.isConvex || a.isConcave && b.isConcave);
+}
+
+// Returns true if two gradients equal each other
+bool gradientEquals(Gradient a, Gradient b) {
+	return (a.isNonIncreasing && b.isNonIncreasing || a.isNonDecreasing && b.isNonDecreasing);
+}
+
+bool curvatureEquals(Property a, Property b) { return curvatureEquals(a.curv, b.curv); }
+bool gradientEquals(Property a, Property b) { return gradientEquals(a.grad, b.grad); }
+
+// Returns true if two properties equal each other
+bool propertyEquals(Property a, Property b) {
+	return (a.curvatureEquals(b) && a.gradientEquals(b));
+}
+
+// Returns the stronger (i.e. the one having more information) curvature out of two equal ones
+Curvature stronger(Curvature a, Curvature b)
+in {
+	assert (a.curvatureEquals(b));
+}
+body {
+	return (a >= b) ? a : b;
+}
+
+// Returns the weaker curvature out of two equal ones
+Curvature weaker(Curvature a, Curvature b)
+in {
+	assert (a.curvatureEquals(b));
+}
+body {
+	return (a <= b) ? a : b;
+}
+
+// Returns the stronger gradient out of two equal ones
+Gradient stronger(Gradient a, Gradient b)
+in {
+	assert (a.gradientEquals(b));
+}
+body {
+	return (a >= b) ? a : b;
+}
+
+// Returns the weaker gradient out of two equal ones
+Gradient weaker(Gradient a, Gradient b)
+in {
+	assert (a.gradientEquals(b));
+}
+body {
+	return (a <= b) ? a : b;
+}
