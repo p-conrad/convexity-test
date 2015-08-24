@@ -132,8 +132,8 @@ unittest {
 	// make sure that for every function in functionProperties there is a rule defined in
 	// applicableRules
 	import std.algorithm : all;
-	assert (all!((a) => a in applicableRules)(functionProperties.keys));
-	assert (all!((a) => applicableRules[a].length >= 1)(functionProperties.keys));
+	static assert (all!((a) => a in applicableRules)(functionProperties.keys));
+	static assert (all!((a) => applicableRules[a].length >= 1)(functionProperties.keys));
 }
 
 // composition rules to be used for a function f(x) = g(h(x))
