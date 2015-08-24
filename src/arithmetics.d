@@ -13,12 +13,7 @@ Property addition(Expression e, Classifier left, Classifier right) {
 	if (left.isConstantValue || right.isConstantValue) return analyze(left.isConstantValue ? e.right: e.left);
 
 	// Addition of two convex/concave functions preserves the properties
-	auto leftProp = analyze(e.left);
-	auto rightProp = analyze(e.right);
-	
-	return Property(
-		leftProp.curvatureEquals(rightProp) ? weaker(leftProp.curv, rightProp.curv) : Curvature.unspecified,
-		leftProp.gradientEquals(rightProp) ? weaker(leftProp.grad, rightProp.grad) : Gradient.unspecified);
+	return weaker(analyze(e.left), analyze(e.right));
 }
 
 Property subtraction(Expression e, Classifier left, Classifier right) {
@@ -31,12 +26,7 @@ Property subtraction(Expression e, Classifier left, Classifier right) {
 	if (right.isConstantValue) return analyze(e.left);
 	
 	// If a concave function is subtracted from a convex one then the result is convex, and vice versa
-	auto leftProp = analyze(e.left);
-	auto rightProp = analyze(e.right);
-
-	return Property(
-		leftProp.curvatureEquals(rightProp) ? Curvature.unspecified : weaker(leftProp.curv, rightProp.curv.complement),
-		leftProp.gradientEquals(rightProp) ? Gradient.unspecified : weaker(leftProp.grad, rightProp.grad.complement));
+	return weaker(analyze(e.left), analyze(e.right).complement);
 }
 
 Property multiplication(Expression e, Classifier left, Classifier right) {

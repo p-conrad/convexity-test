@@ -79,38 +79,40 @@ bool propertyEquals(Property a, Property b) {
 	return (a.curvatureEquals(b) && a.gradientEquals(b));
 }
 
-// Returns the stronger (i.e. the one having more information) curvature out of two equal ones
-Curvature stronger(Curvature a, Curvature b)
-in {
-	assert (a.curvatureEquals(b));
-}
-body {
+// Returns the stronger (i.e. the one having more information) curvature out of two
+// When a concave and a convex curvature are given the result is assumed to be linear
+Curvature stronger(Curvature a, Curvature b) {
+	if (a.isConcave && b.isConvex || a.isConvex && b.isConcave) return Curvature.linear;
 	return (a >= b) ? a : b;
 }
 
-// Returns the weaker curvature out of two equal ones
-Curvature weaker(Curvature a, Curvature b)
-in {
-	assert (a.curvatureEquals(b));
-}
-body {
+// Returns the weaker curvature out of two
+// When a concave and a convex curvature are given the result will be unspecified
+Curvature weaker(Curvature a, Curvature b) {
+	if (a.isConcave && b.isConvex || a.isConvex && b.isConcave) return Curvature.unspecified;
 	return (a <= b) ? a : b;
 }
 
-// Returns the stronger gradient out of two equal ones
-Gradient stronger(Gradient a, Gradient b)
-in {
-	assert (a.gradientEquals(b));
-}
-body {
+// Returns the stronger gradient out of two
+// When an increasing and a decreasing gradient are given the result is assumed to be constant
+Gradient stronger(Gradient a, Gradient b) {
+	if (a.isIncreasing && b.isDecreasing || a.isDecreasing && b.isIncreasing) return Gradient.constant;
 	return (a >= b) ? a : b;
 }
 
-// Returns the weaker gradient out of two equal ones
-Gradient weaker(Gradient a, Gradient b)
-in {
-	assert (a.gradientEquals(b));
-}
-body {
+// Returns the weaker gradient out of two
+// When an increasing and a decreasing gradient are given the result will be unspecified
+Gradient weaker(Gradient a, Gradient b) {
+	if (a.isIncreasing && b.isDecreasing || a.isDecreasing && b.isIncreasing) return Gradient.unspecified;
 	return (a <= b) ? a : b;
+}
+
+// Returns the stronger Property out of two
+Property stronger(Property a, Property b) {
+	return Property(stronger(a.curv, b.curv), stronger(a.grad, b.grad));
+}
+
+// Returns the weaker Property out of two
+Property weaker(Property a, Property b) {
+	return Property(weaker(a.curv, b.curv), weaker(a.grad, b.grad));
 }
