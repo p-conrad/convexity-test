@@ -8,7 +8,7 @@ alias Property = Tuple!(Curvature, "curv", Gradient, "grad");
 
 // Check for some properties of the Gradient or Curvature
 bool isNonDecreasing(Gradient g) {
-	return (g == Gradient.nondecreasing || g == gradient.constant);
+	return (g == Gradient.nondecreasing || g == Gradient.constant);
 }
 
 bool isNonIncreasing(Gradient g) {
