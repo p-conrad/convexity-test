@@ -24,7 +24,7 @@ version (unittest) {
 enum Rule[][Identifier] applicableRules = [
 	"+"		:	[&arithmeticRule],
 	"-"		:	[&arithmeticRule],
-	"*"		:	[&arithmeticRule],
+	".*"	:	[&arithmeticRule],
 	"/"		:	[&arithmeticRule],
 	"ln"	:	[&compositionRule],
 	"exp"	:	[&compositionRule],
@@ -49,14 +49,14 @@ unittest {
 	// should be (convex, nonincreasing) but turns out unknown because of insufficient ruleset for now
 	assert (analyze(E("ln", [E("/", [E("1"), E("x")])])) == P(unknown, unspecified));
 	// should be convex, however by now there is no rule to cover that case
-	assert (analyze(E("*", [E("x"), E("ln", [E("x")])])) == P(unknown, unspecified));
+	assert (analyze(E(".*", [E("x"), E("ln", [E("x")])])) == P(unknown, unspecified));
 }
 
 // a rule dealing with simple arithmetic operations
 Property arithmeticRule(Expression e)
 in {
 	import std.algorithm : any;
-	assert (any!(a => a == e.id)(["+", "-", "*", "/"]));
+	assert (any!(a => a == e.id)(["+", "-", ".*", "/"]));
 }
 body {
 	// We are expecting the operators to be binary for now (?)
@@ -85,7 +85,7 @@ body {
 	if (!(left.isConstantValue || right.isConstantValue))
 		return Property(Curvature.unspecified, Gradient.unspecified);
 
-	if (e.id == "*") return multiplication(e, left, right);
+	if (e.id == ".*") return multiplication(e, left, right);
 	if (e.id == "/") return division(e, left, right);
 
 	assert (0);
@@ -104,21 +104,21 @@ unittest {
 	assert (arithmeticRule(E("-", [E("ln", [E("x")]), E("2")])) == P(concave, unspecified));
 	assert (arithmeticRule(E("-", [E("ln", [E("x")]), E("-2")])) == P(concave, unspecified));
 	assert (arithmeticRule(E("-", [E("2"), E("ln", [E("x")])])) == P(convex, unspecified));
-	assert (arithmeticRule(E("*", [E("ln", [E("x")]), E("2")])) == P(concave, unspecified));
-	assert (arithmeticRule(E("*", [E("ln", [E("x")]), E("-2")])) == P(convex, unspecified));
+	assert (arithmeticRule(E(".*", [E("ln", [E("x")]), E("2")])) == P(concave, unspecified));
+	assert (arithmeticRule(E(".*", [E("ln", [E("x")]), E("-2")])) == P(convex, unspecified));
 	assert (arithmeticRule(E("/", [E("1"), E("ln", [E("x")])])) == P(convex, unspecified));
 	assert (arithmeticRule(E("/", [E("1"), E("-", [E("ln", [E("x")])])])) == P(concave, unspecified));
 
 	// division by linear functions, using some more complex examples
 	assert (arithmeticRule(E("/", [E("1"), E("x")])) == P(convex, nonincreasing));
 	assert (arithmeticRule(E("/", [E("1"), E("-", [E("x")])])) == P(concave, nondecreasing));
-	assert (arithmeticRule(E("/", [E("1"), E("+", [E("*", [E("-2"), E("x")]), E("5")])]))
+	assert (arithmeticRule(E("/", [E("1"), E("+", [E(".*", [E("-2"), E("x")]), E("5")])]))
 			== P(concave, nondecreasing));
-	assert (arithmeticRule(E("/", [E("1"), E("-", [E("+", [E("*", [E("-2"), E("x")]), E("5")])])]))
+	assert (arithmeticRule(E("/", [E("1"), E("-", [E("+", [E(".*", [E("-2"), E("x")]), E("5")])])]))
 			== P(convex, nonincreasing));
-	assert (arithmeticRule(E("/", [E("-1"), E("+", [E("*", [E("-2"), E("x")]), E("5")])]))
+	assert (arithmeticRule(E("/", [E("-1"), E("+", [E(".*", [E("-2"), E("x")]), E("5")])]))
 			== P(convex, nonincreasing));
-	assert (arithmeticRule(E("/", [E("-1"), E("-", [E("+", [E("*", [E("-2"), E("x")]), E("5")])])]))
+	assert (arithmeticRule(E("/", [E("-1"), E("-", [E("+", [E(".*", [E("-2"), E("x")]), E("5")])])]))
 			== P(concave, nondecreasing));
 }
 
@@ -159,8 +159,8 @@ Property compositionRule(Expression e) {
 }
 
 unittest {
-	assert (compositionRule(E("exp", [E("*", [E("2"), E("x")])])) == P(convex, unspecified));
-	assert (compositionRule(E("exp", [E("-", [E("ln", [E("*", [E("2"), E("x")])])])])) == P(convex, unspecified));
+	assert (compositionRule(E("exp", [E(".*", [E("2"), E("x")])])) == P(convex, unspecified));
+	assert (compositionRule(E("exp", [E("-", [E("ln", [E(".*", [E("2"), E("x")])])])])) == P(convex, unspecified));
 }
 
 // an empty rule for expressions which should not occur due to transformations (e.g. abs)

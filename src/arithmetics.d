@@ -30,7 +30,7 @@ Property subtraction(Expression e, Classifier left, Classifier right) {
 }
 
 Property multiplication(Expression e, Classifier left, Classifier right) {
-	assert (e.id == "*");
+	assert (e.id == ".*");
 	assert (!(left.isConstantValue && right.isConstantValue));
 
 	// Multiplication with a scalar preserves the properties if the scalar is larger than 0 and
