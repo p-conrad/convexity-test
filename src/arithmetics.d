@@ -53,14 +53,14 @@ Property division(Expression e, Classifier left, Classifier right) {
 		// First check whether the function divided is linear. The curvature and gradient need
 		// to be adjusted accordingly
 		if (left.isPositive && result.isLinear) {
-			return result.isIncreasing
-				? Property(Curvature.convex, Gradient.decreasing)
-				: Property(Curvature.concave, Gradient.increasing);
+			return result.isNonDecreasing
+				? Property(Curvature.convex, Gradient.nonincreasing)
+				: Property(Curvature.concave, Gradient.nondecreasing);
 		}
 		if (left.isNegative && result.isLinear) {
-			return result.isIncreasing
-				? Property(Curvature.concave, Gradient.increasing)
-				: Property(Curvature.convex, Gradient.decreasing);
+			return result.isNonDecreasing
+				? Property(Curvature.concave, Gradient.nondecreasing)
+				: Property(Curvature.convex, Gradient.nonincreasing);
 		}
 		// for non-linear functions the result only depends on whether the number is smaller or larger than zero
 		return positiveConstant ? result.complement : result;

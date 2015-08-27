@@ -14,8 +14,8 @@ version (unittest) {
 	alias convex = Curvature.convex;
 	alias linear = Curvature.linear;
 	alias unknown = Curvature.unspecified;
-	alias increasing = Gradient.increasing;
-	alias decreasing = Gradient.decreasing;
+	alias nondecreasing = Gradient.nondecreasing;
+	alias nonincreasing = Gradient.nonincreasing;
 	alias constant = Gradient.constant;
 	alias unspecified = Gradient.unspecified;
 }
@@ -34,7 +34,7 @@ enum Rule[][Identifier] applicableRules = [
 // The algorithm checking for convexity
 Property analyze(Expression e) {
 	if (isNumber(e)) return Property(Curvature.linear, Gradient.constant);
-	if (isArgument(e)) return Property(Curvature.linear, Gradient.increasing);
+	if (isArgument(e)) return Property(Curvature.linear, Gradient.nondecreasing);
 
 	assert (e.id in applicableRules);
 
@@ -45,8 +45,8 @@ Property analyze(Expression e) {
 
 unittest {
 	assert (analyze(E("2")) == P(linear, constant));
-	assert (analyze(E("x")) == P(linear, increasing));
-	// should be (convex, decreasing) but turns out unknown because of insufficient ruleset for now
+	assert (analyze(E("x")) == P(linear, nondecreasing));
+	// should be (convex, nonincreasing) but turns out unknown because of insufficient ruleset for now
 	assert (analyze(E("ln", [E("/", [E("1"), E("x")])])) == P(unknown, unspecified));
 	// should be convex, however by now there is no rule to cover that case
 	assert (analyze(E("*", [E("x"), E("ln", [E("x")])])) == P(unknown, unspecified));
@@ -110,22 +110,22 @@ unittest {
 	assert (arithmeticRule(E("/", [E("1"), E("-", [E("ln", [E("x")])])])) == P(concave, unspecified));
 
 	// division by linear functions, using some more complex examples
-	assert (arithmeticRule(E("/", [E("1"), E("x")])) == P(convex, decreasing));
-	assert (arithmeticRule(E("/", [E("1"), E("-", [E("x")])])) == P(concave, increasing));
+	assert (arithmeticRule(E("/", [E("1"), E("x")])) == P(convex, nonincreasing));
+	assert (arithmeticRule(E("/", [E("1"), E("-", [E("x")])])) == P(concave, nondecreasing));
 	assert (arithmeticRule(E("/", [E("1"), E("+", [E("*", [E("-2"), E("x")]), E("5")])]))
-			== P(concave, increasing));
+			== P(concave, nondecreasing));
 	assert (arithmeticRule(E("/", [E("1"), E("-", [E("+", [E("*", [E("-2"), E("x")]), E("5")])])]))
-			== P(convex, decreasing));
+			== P(convex, nonincreasing));
 	assert (arithmeticRule(E("/", [E("-1"), E("+", [E("*", [E("-2"), E("x")]), E("5")])]))
-			== P(convex, decreasing));
+			== P(convex, nonincreasing));
 	assert (arithmeticRule(E("/", [E("-1"), E("-", [E("+", [E("*", [E("-2"), E("x")]), E("5")])])]))
-			== P(concave, increasing));
+			== P(concave, nondecreasing));
 }
 
 // properties of already known functions, to be used with the composition rule
 enum Property[string] functionProperties = [
-	"ln"	:	Property(Curvature.concave, Gradient.increasing),
-	"exp"	:	Property(Curvature.convex, Gradient.increasing),
+	"ln"	:	Property(Curvature.concave, Gradient.nondecreasing),
+	"exp"	:	Property(Curvature.convex, Gradient.nondecreasing),
 ];
 
 unittest {

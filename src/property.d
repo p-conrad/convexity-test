@@ -1,21 +1,18 @@
 // Function properties
 enum Curvature { unspecified, concave, convex, linear }
-enum Gradient { unspecified, increasing, decreasing, constant }
+enum Gradient { unspecified, nondecreasing, nonincreasing, constant }
 
 // A tuple, describing both properties of a given expression
 import std.typecons : Tuple;
 alias Property = Tuple!(Curvature, "curv", Gradient, "grad");
 
 // Check for some properties of the Gradient or Curvature
-bool isIncreasing(Gradient g) { return g == Gradient.increasing; }
-bool isDecreasing(Gradient g) { return g == Gradient.decreasing; }
-
 bool isNonDecreasing(Gradient g) {
-	return (g == Gradient.increasing || g == Gradient.constant);
+	return (g == Gradient.nondecreasing || g == gradient.constant);
 }
 
 bool isNonIncreasing(Gradient g) {
-	return (g == Gradient.decreasing || g == Gradient.constant);
+	return (g == Gradient.nonincreasing || g == Gradient.constant);
 }
 
 bool isConvex(Curvature c) {
@@ -29,8 +26,6 @@ bool isConcave(Curvature c) {
 bool isLinear(Curvature c) { return c == Curvature.linear; }
 
 // wrapper functions
-bool isIncreasing(Property p) { return isIncreasing(p.grad); }
-bool isDecreasing(Property p) { return isDecreasing(p.grad); }
 bool isNonDecreasing(Property p) { return isNonDecreasing(p.grad); }
 bool isNonIncreasing(Property p) { return isNonIncreasing(p.grad); }
 bool isConvex(Property p) { return isConvex(p.curv); }
@@ -46,8 +41,8 @@ enum Curvature[Curvature] cComplement = [
 ];
 
 enum Gradient[Gradient] gComplement = [
-	Gradient.increasing		:	Gradient.decreasing,
-	Gradient.decreasing		:	Gradient.increasing,
+	Gradient.nondecreasing	:	Gradient.nonincreasing,
+	Gradient.nonincreasing	:	Gradient.nondecreasing,
 	Gradient.constant		:	Gradient.constant,
 	Gradient.unspecified	:	Gradient.unspecified
 ];
@@ -94,16 +89,16 @@ Curvature weaker(Curvature a, Curvature b) {
 }
 
 // Returns the stronger gradient out of two
-// When an increasing and a decreasing gradient are given the result is assumed to be constant
+// When an nondecreasing and a nonincreasing gradient are given the result is assumed to be constant
 Gradient stronger(Gradient a, Gradient b) {
-	if (a.isIncreasing && b.isDecreasing || a.isDecreasing && b.isIncreasing) return Gradient.constant;
+	if (a.isNonDecreasing && b.isNonIncreasing || a.isNonIncreasing && b.isNonDecreasing) return Gradient.constant;
 	return (a >= b) ? a : b;
 }
 
 // Returns the weaker gradient out of two
-// When an increasing and a decreasing gradient are given the result will be unspecified
+// When an nondecreasing and a nonincreasing gradient are given the result will be unspecified
 Gradient weaker(Gradient a, Gradient b) {
-	if (a.isIncreasing && b.isDecreasing || a.isDecreasing && b.isIncreasing) return Gradient.unspecified;
+	if (a.isNonDecreasing && b.isNonIncreasing || a.isNonIncreasing && b.isNonDecreasing) return Gradient.unspecified;
 	return (a <= b) ? a : b;
 }
 
