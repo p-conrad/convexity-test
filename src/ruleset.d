@@ -1,6 +1,7 @@
 import property;
 import expression;
 import classifier;
+import arithmetics;
 
 // To check for convexity, certain rules are being applied. These are, by definition, functions
 // taking an expression as argument and returning the property of that expression.
@@ -22,10 +23,10 @@ version (unittest) {
 
 // Rules to apply when checking for convexity
 enum Rule[][Identifier] applicableRules = [
-	"+"		:	[&arithmeticRule],
-	"-"		:	[&arithmeticRule],
-	".*"	:	[&arithmeticRule],
-	"/"		:	[&arithmeticRule],
+	"+"		:	[&addition],
+	"-"		:	[&subtraction],
+	".*"	:	[&multiplication],
+	"/"		:	[&division],
 	"ln"	:	[&compositionRule],
 	"exp"	:	[&compositionRule],
 	"abs"	:	[&emptyRule]
@@ -37,6 +38,14 @@ Property analyze(Expression e) {
 	if (isArgument(e)) return Property(Curvature.linear, Gradient.nondecreasing);
 
 	assert (e.id in applicableRules);
+
+	// unary minus
+	if (e.id == "-" && e.childCount == 1)
+		return analyze(e.child).complement;
+
+	// unary plus
+	if (e.id == "+" && e.childCount == 1)
+		return analyze(e.child);
 
 	// simple version: take the first available rule and return its result
 	// better: apply all available rules, then pick/combine their best result [TODO]
@@ -50,76 +59,10 @@ unittest {
 	assert (analyze(E("ln", [E("/", [E("1"), E("x")])])) == P(unknown, unspecified));
 	// should be convex, however by now there is no rule to cover that case
 	assert (analyze(E(".*", [E("x"), E("ln", [E("x")])])) == P(unknown, unspecified));
-}
-
-// a rule dealing with simple arithmetic operations
-Property arithmeticRule(Expression e)
-in {
-	import std.algorithm : any;
-	assert (any!(a => a == e.id)(["+", "-", ".*", "/"]));
-}
-body {
-	// We are expecting the operators to be binary for now (?)
-	assert (e.childCount <= 2 && e.childCount > 0);
-
-	// unary minus
-	if (e.id == "-" && e.childCount == 1)
-		return analyze(e.child).complement;
-
-	// unary plus
-	if (e.id == "+" && e.childCount == 1)
-		return analyze(e.child);
-
-	// If both children are numbers, the result is always linear
-	if (isNumber(e.left) && isNumber(e.right))
-		return Property(Curvature.linear, Gradient.constant);
-
-	auto left = classify(e.left);
-	auto right = classify(e.right);
-
-	import arithmetics;
-	if (e.id == "+") return addition(e, left, right);
-	if (e.id == "-") return subtraction(e, left, right);
-
-	// The result of multiplying / dividing two functions cannot (yet?) be determined by arithmeticRule
-	if (!(left.isConstantValue || right.isConstantValue))
-		return Property(Curvature.unspecified, Gradient.unspecified);
-
-	if (e.id == ".*") return multiplication(e, left, right);
-	if (e.id == "/") return division(e, left, right);
-
-	assert (0);
-}
-
-unittest {
-	// two numbers
-	assert (arithmeticRule(E("+", [E("2.5"), E("-2")])) == P(linear, constant));
 
 	// unary minus and plus
-	assert (arithmeticRule(E("-", [E("ln", [E("x")])])) == P(convex, unspecified));
-	assert (arithmeticRule(E("+", [E("ln", [E("x")])])) == P(concave, unspecified));
-
-	// addition, subtraction, multiplication
-	assert (arithmeticRule(E("+", [E("ln", [E("x")]), E("2")])) == P(concave, unspecified));
-	assert (arithmeticRule(E("-", [E("ln", [E("x")]), E("2")])) == P(concave, unspecified));
-	assert (arithmeticRule(E("-", [E("ln", [E("x")]), E("-2")])) == P(concave, unspecified));
-	assert (arithmeticRule(E("-", [E("2"), E("ln", [E("x")])])) == P(convex, unspecified));
-	assert (arithmeticRule(E(".*", [E("ln", [E("x")]), E("2")])) == P(concave, unspecified));
-	assert (arithmeticRule(E(".*", [E("ln", [E("x")]), E("-2")])) == P(convex, unspecified));
-	assert (arithmeticRule(E("/", [E("1"), E("ln", [E("x")])])) == P(convex, unspecified));
-	assert (arithmeticRule(E("/", [E("1"), E("-", [E("ln", [E("x")])])])) == P(concave, unspecified));
-
-	// division by linear functions, using some more complex examples
-	assert (arithmeticRule(E("/", [E("1"), E("x")])) == P(convex, nonincreasing));
-	assert (arithmeticRule(E("/", [E("1"), E("-", [E("x")])])) == P(concave, nondecreasing));
-	assert (arithmeticRule(E("/", [E("1"), E("+", [E(".*", [E("-2"), E("x")]), E("5")])]))
-			== P(concave, nondecreasing));
-	assert (arithmeticRule(E("/", [E("1"), E("-", [E("+", [E(".*", [E("-2"), E("x")]), E("5")])])]))
-			== P(convex, nonincreasing));
-	assert (arithmeticRule(E("/", [E("-1"), E("+", [E(".*", [E("-2"), E("x")]), E("5")])]))
-			== P(convex, nonincreasing));
-	assert (arithmeticRule(E("/", [E("-1"), E("-", [E("+", [E(".*", [E("-2"), E("x")]), E("5")])])]))
-			== P(concave, nondecreasing));
+	assert (analyze(E("-", [E("ln", [E("x")])])) == P(convex, unspecified));
+	assert (analyze(E("+", [E("ln", [E("x")])])) == P(concave, unspecified));
 }
 
 // properties of already known functions, to be used with the composition rule
@@ -155,7 +98,7 @@ Property compositionRule(Expression e) {
 	if (parent.isConcave && parent.isNonIncreasing && child.isConvex)
 		return Property(Curvature.concave, Gradient.unspecified);
 
-	return Property(Curvature.unspecified, Gradient.unspecified);
+	return unknownResult;
 }
 
 unittest {
