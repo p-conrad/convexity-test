@@ -6,6 +6,9 @@ enum Gradient { unspecified, nondecreasing, nonincreasing, constant }
 import std.typecons : Tuple;
 alias Property = Tuple!(Curvature, "curv", Gradient, "grad");
 
+// the "unknown" result to be returned when a certain case can not be handled by a rule
+enum unknownResult = Property(Curvature.unspecified, Gradient.unspecified);
+
 // Check for some properties of the Gradient or Curvature
 bool isNonDecreasing(Gradient g) {
 	return (g == Gradient.nondecreasing || g == Gradient.constant);
