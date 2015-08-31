@@ -1,6 +1,5 @@
 import property;
 import expression;
-import classifier;
 import arithmetics;
 
 // To check for convexity, certain rules are being applied. These are, by definition, functions
@@ -34,6 +33,7 @@ enum Rule[][Identifier] applicableRules = [
 
 // The algorithm checking for convexity
 Property analyze(Expression e) {
+	import classifier : isNumber, isArgument;
 	if (isNumber(e)) return Property(Curvature.linear, Gradient.constant);
 	if (isArgument(e)) return Property(Curvature.linear, Gradient.nondecreasing);
 
