@@ -47,9 +47,9 @@ Property analyze(Expression e) {
 	if (e.id == "+" && e.childCount == 1)
 		return analyze(e.child);
 
-	// simple version: take the first available rule and return its result
-	// better: apply all available rules, then pick/combine their best result [TODO]
-	return applicableRules[e.id][0](e);
+	// Iterate all available rules and use the "stronger" function to get their best possible result
+	import std.algorithm : map, reduce;
+	return reduce!((a, b) => stronger(a, b))(unknownResult, map!(a => a(e))(applicableRules[e.id]));
 }
 
 unittest {
