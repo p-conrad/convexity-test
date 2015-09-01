@@ -10,27 +10,18 @@ alias Property = Tuple!(Curvature, "curv", Gradient, "grad");
 enum unknownResult = Property(Curvature.unspecified, Gradient.unspecified);
 
 // Check for some properties of the Gradient or Curvature
-bool isNonDecreasing(Gradient g) {
-	return (g == Gradient.nondecreasing || g == Gradient.constant);
-}
+bool isNonDecreasing(Gradient g) { return (g == Gradient.nondecreasing || g == Gradient.constant); }
+bool isNonIncreasing(Gradient g) { return (g == Gradient.nonincreasing || g == Gradient.constant); }
+bool isConstant(Gradient g) { return g == Gradient.constant; }
 
-bool isNonIncreasing(Gradient g) {
-	return (g == Gradient.nonincreasing || g == Gradient.constant);
-}
-
-bool isConvex(Curvature c) {
-	return (c == Curvature.convex || c == Curvature.linear);
-}
-
-bool isConcave(Curvature c) {
-	return (c == Curvature.concave || c == Curvature.linear);
-}
-
+bool isConvex(Curvature c) { return (c == Curvature.convex || c == Curvature.linear); }
+bool isConcave(Curvature c) { return (c == Curvature.concave || c == Curvature.linear); }
 bool isLinear(Curvature c) { return c == Curvature.linear; }
 
 // wrapper functions
 bool isNonDecreasing(Property p) { return isNonDecreasing(p.grad); }
 bool isNonIncreasing(Property p) { return isNonIncreasing(p.grad); }
+bool isConstant(Property p) { return isConstant(p.grad); }
 bool isConvex(Property p) { return isConvex(p.curv); }
 bool isConcave(Property p) { return isConcave(p.curv); }
 bool isLinear(Property p) { return isLinear(p.curv); }
@@ -87,7 +78,8 @@ Curvature stronger(Curvature a, Curvature b) {
 // Returns the weaker curvature out of two
 // When a concave and a convex curvature are given the result will be unspecified
 Curvature weaker(Curvature a, Curvature b) {
-	if (a.isConcave && b.isConvex || a.isConvex && b.isConcave) return Curvature.unspecified;
+	if ((!a.isLinear && !b.isLinear) && (a.isConcave && b.isConvex || a.isConvex && b.isConcave))
+		return Curvature.unspecified;
 	return (a <= b) ? a : b;
 }
 
@@ -101,7 +93,8 @@ Gradient stronger(Gradient a, Gradient b) {
 // Returns the weaker gradient out of two
 // When an nondecreasing and a nonincreasing gradient are given the result will be unspecified
 Gradient weaker(Gradient a, Gradient b) {
-	if (a.isNonDecreasing && b.isNonIncreasing || a.isNonIncreasing && b.isNonDecreasing) return Gradient.unspecified;
+	if ((!a.isConstant && ! b.isConstant) && (a.isNonDecreasing && b.isNonIncreasing || a.isNonIncreasing && b.isNonDecreasing))
+		return Gradient.unspecified;
 	return (a <= b) ? a : b;
 }
 
