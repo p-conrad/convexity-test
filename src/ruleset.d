@@ -2,11 +2,11 @@ import property;
 import expression;
 import arithmetics;
 
-// To check for convexity, certain rules are being applied. These are, by definition, functions
-// taking an expression as argument and returning the property of that expression.
+/// To check for convexity, rules are being applied. These are, by definition, functions
+/// taking an expression as argument and returning the property of that expression.
 alias Rule = Property function(Expression);
 
-// Aliases to simplify the unit tests
+/// Aliases to simplify the unit tests.
 version (unittest) {
 	alias E = Expression;
 	alias P = Property;
@@ -20,7 +20,7 @@ version (unittest) {
 	alias unspecified = Gradient.unspecified;
 }
 
-// Rules to apply when checking for convexity
+/// Rules to apply when checking for convexity.
 enum Rule[][Identifier] applicableRules = [
 	"+"		:	[&addition],
 	"-"		:	[&subtraction],
@@ -31,7 +31,7 @@ enum Rule[][Identifier] applicableRules = [
 	"abs"	:	[&emptyRule]
 ];
 
-// The algorithm checking for convexity
+/// The algorithm checking for convexity.
 Property analyze(Expression e) {
 	import classifier : isNumber, isArgument;
 	if (isNumber(e)) return Property(Curvature.linear, Gradient.constant);
@@ -39,11 +39,9 @@ Property analyze(Expression e) {
 
 	assert (e.id in applicableRules);
 
-	// unary minus
 	if (e.id == "-" && e.childCount == 1)
 		return analyze(e.child).complement;
 
-	// unary plus
 	if (e.id == "+" && e.childCount == 1)
 		return analyze(e.child);
 
@@ -65,25 +63,23 @@ unittest {
 	assert (analyze(E("+", [E("ln", [E("x")])])) == P(concave, unspecified));
 }
 
-// properties of already known functions, to be used with the composition rule
+/// properties of already known functions, to be used with the composition rule.
 enum Property[string] functionProperties = [
 	"ln"	:	Property(Curvature.concave, Gradient.nondecreasing),
 	"exp"	:	Property(Curvature.convex, Gradient.nondecreasing),
 ];
 
 unittest {
-	// make sure that for every function in functionProperties there is a rule defined in
-	// applicableRules
+	// Any function above should also be defined in applicableRules.
 	import std.algorithm : all;
 	static assert (all!((a) => a in applicableRules)(functionProperties.keys));
 	static assert (all!((a) => applicableRules[a].length >= 1)(functionProperties.keys));
 }
 
-// composition rules to be used for a function f(x) = g(h(x))
+/// Composition rules to be used for a function f(x) = g(h(x)).
 Property compositionRule(Expression e) {
-	// expressions to be checked with this rule need to have exactly one child: h(x), while g is the
-	// expression itself
-	// TODO: A function may actually have more than one argument
+	// We need to have exactly one child: h(x), while g is the expression itself.
+	// TODO: A function may actually have more than one argument.
 	assert (e.childCount == 1);
 
 	auto parent = functionProperties[e.id];
@@ -106,7 +102,7 @@ unittest {
 	assert (compositionRule(E("exp", [E("-", [E("ln", [E(".*", [E("2"), E("x")])])])])) == P(convex, unspecified));
 }
 
-// an empty rule for expressions which should not occur due to transformations (e.g. abs)
+/// An empty rule for expressions which should not occur due to transformations (e.g. abs).
 Property emptyRule(Expression e) {
 	assert (0, "emptyRule has been called");
 }
