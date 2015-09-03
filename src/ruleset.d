@@ -68,16 +68,14 @@ Result analyze(Expression e) {
 }
 
 unittest {
-	assert (analyze(E("2")) == R(linear, constant));
-	assert (analyze(E("x")) == R(linear, nondecreasing));
 	// should be (convex, nonincreasing) but turns out unknown because of insufficient ruleset for now
 	assert (analyze(E("ln", [E("/", [E("1"), E("x")])])) == R(unknown, unspecified));
 	// should be convex, however by now there is no rule to cover that case
 	assert (analyze(E(".*", [E("x"), E("ln", [E("x")])])) == R(unknown, unspecified));
 
 	// unary minus and plus
-	assert (analyze(E("-", [E("ln", [E("x")])])) == R(convex, unspecified));
-	assert (analyze(E("+", [E("ln", [E("x")])])) == R(concave, unspecified));
+	assert (analyze(E("-", lnX)) == R(convex, unspecified));
+	assert (analyze(E("+", lnX)) == R(concave, unspecified));
 }
 
 /// attributes of already known functions, to be used with the composition rule.
@@ -117,6 +115,7 @@ Result compositionRule(Expression e) {
 unittest {
 	assert (compositionRule(E("exp", linFun1)) == R(convex, unspecified));
 	assert (compositionRule(E("exp", E("-", E("ln", linFun1)))) == R(convex, unspecified));
+	assert (compositionRule(E("exp", expX)) == R(convex, unspecified));
 }
 
 /// An empty rule for expressions which should not occur due to transformations (e.g. abs).
