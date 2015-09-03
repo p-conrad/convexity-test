@@ -18,6 +18,14 @@ version (unittest) {
 	alias nonincreasing = Gradient.nonincreasing;
 	alias constant = Gradient.constant;
 	alias unspecified = Gradient.unspecified;
+
+	enum x = E("x");
+	enum sc1 = E("5");
+	enum sc2 = E("-5");
+	enum expX = E("exp", E("x"));
+	enum lnX = E("ln", E("x"));
+	enum linFun1 = E("+", E(".*", E("2"), E("x")), E("5"));
+	enum linFun2 = E("+", E(".*", E("-2"), E("x")), E("-5"));
 }
 
 /// Rules to apply when checking for convexity.

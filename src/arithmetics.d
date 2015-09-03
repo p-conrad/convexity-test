@@ -32,8 +32,12 @@ Property addition(Expression e, Classifier left, Classifier right) {
 }
 
 unittest {
-	assert (addition(E("+", [E("2.5"), E("-2")])) == P(linear, constant));
-	assert (addition(E("+", [E("ln", [E("x")]), E("2")])) == P(concave, unspecified));
+	assert (addition(E("+", sc1, sc2)) == P(linear, constant));
+	assert (addition(E("+", lnX, sc1)) == P(concave, unspecified));
+	assert (addition(E("+", lnX, linFun1)) == P(concave, unspecified));
+	assert (addition(E("+", lnX, E("-", linFun1))) == P(concave, unspecified));
+	assert (addition(E("+", expX, linFun1)) == P(convex, unspecified));
+	assert (addition(E("+", linFun1, linFun2)) == P(linear, unspecified));
 }
 
 Property subtraction(Expression e, Classifier left, Classifier right) {
@@ -48,9 +52,9 @@ Property subtraction(Expression e, Classifier left, Classifier right) {
 }
 
 unittest {
-	assert (subtraction(E("-", [E("ln", [E("x")]), E("2")])) == P(concave, unspecified));
-	assert (subtraction(E("-", [E("ln", [E("x")]), E("-2")])) == P(concave, unspecified));
-	assert (subtraction(E("-", [E("2"), E("ln", [E("x")])])) == P(convex, unspecified));
+	assert (subtraction(E("-", lnX, sc1)) == P(concave, unspecified));
+	assert (subtraction(E("-", lnX, sc2)) == P(concave, unspecified));
+	assert (subtraction(E("-", sc1, lnX)) == P(convex, unspecified));
 }
 
 Property multiplication(Expression e, Classifier left, Classifier right) {
@@ -66,8 +70,8 @@ Property multiplication(Expression e, Classifier left, Classifier right) {
 }
 
 unittest {
-	assert (multiplication(E(".*", [E("ln", [E("x")]), E("2")])) == P(concave, unspecified));
-	assert (multiplication(E(".*", [E("ln", [E("x")]), E("-2")])) == P(convex, unspecified));
+	assert (multiplication(E(".*", lnX, sc1)) == P(concave, unspecified));
+	assert (multiplication(E(".*", lnX, sc2)) == P(convex, unspecified));
 }
 
 Property division(Expression e, Classifier left, Classifier right) {
@@ -98,18 +102,14 @@ Property division(Expression e, Classifier left, Classifier right) {
 }
 
 unittest {
-	assert (division(E("/", [E("1"), E("ln", [E("x")])])) == P(convex, unspecified));
-	assert (division(E("/", [E("1"), E("-", [E("ln", [E("x")])])])) == P(concave, unspecified));
+	assert (division(E("/", sc1, lnX)) == P(convex, unspecified));
+	assert (division(E("/", sc1, E("-", lnX))) == P(concave, unspecified));
 
 	// division by linear functions, using some more complex examples
-	assert (division(E("/", [E("1"), E("x")])) == P(convex, nonincreasing));
-	assert (division(E("/", [E("1"), E("-", [E("x")])])) == P(concave, nondecreasing));
-	assert (division(E("/", [E("1"), E("+", [E(".*", [E("-2"), E("x")]), E("5")])]))
-			== P(concave, nondecreasing));
-	assert (division(E("/", [E("1"), E("-", [E("+", [E(".*", [E("-2"), E("x")]), E("5")])])]))
-			== P(convex, nonincreasing));
-	assert (division(E("/", [E("-1"), E("+", [E(".*", [E("-2"), E("x")]), E("5")])]))
-			== P(convex, nonincreasing));
-	assert (division(E("/", [E("-1"), E("-", [E("+", [E(".*", [E("-2"), E("x")]), E("5")])])]))
-			== P(concave, nondecreasing));
+	assert (division(E("/", sc1, E("x"))) == P(convex, nonincreasing));
+	assert (division(E("/", sc1, E("-", x))) == P(concave, nondecreasing));
+	assert (division(E("/", sc1, linFun2)) == P(concave, nondecreasing));
+	assert (division(E("/", sc1, E("-", linFun2))) == P(convex, nonincreasing));
+	assert (division(E("/", sc2, linFun2)) == P(convex, nonincreasing));
+	assert (division(E("/", sc2, E("-", linFun2))) == P(concave, nondecreasing));
 }

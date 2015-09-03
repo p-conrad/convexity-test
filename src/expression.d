@@ -6,8 +6,7 @@ struct Expression {
 	Identifier id;
 	Expression[] children;
 
-	this (Identifier id) { this(id, []); }
-	this (Identifier id, Expression[] children) {
+	this (Identifier id, Expression[] children ...) {
 		this.id = id;
 		this.children = children;
 	}
