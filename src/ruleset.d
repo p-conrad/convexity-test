@@ -106,8 +106,8 @@ Property compositionRule(Expression e) {
 }
 
 unittest {
-	assert (compositionRule(E("exp", [E(".*", [E("2"), E("x")])])) == P(convex, unspecified));
-	assert (compositionRule(E("exp", [E("-", [E("ln", [E(".*", [E("2"), E("x")])])])])) == P(convex, unspecified));
+	assert (compositionRule(E("exp", linFun1)) == P(convex, unspecified));
+	assert (compositionRule(E("exp", E("-", E("ln", linFun1)))) == P(convex, unspecified));
 }
 
 /// An empty rule for expressions which should not occur due to transformations (e.g. abs).
