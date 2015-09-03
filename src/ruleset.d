@@ -28,6 +28,15 @@ version (unittest) {
 	enum linFun2 = E("+", E(".*", E("-2"), E("x")), E("-5"));
 }
 
+unittest {
+	assert (analyze(x) == P(linear, nondecreasing));
+	assert (analyze(sc1) == P(linear, constant));
+	assert (analyze(expX) == P(convex, unspecified));
+	assert (analyze(lnX) == P(concave, unspecified));
+	assert (analyze(linFun1) == P(linear, nondecreasing));
+	assert (analyze(linFun2) == P(linear, nonincreasing));
+}
+
 /// Rules to apply when checking for convexity.
 enum Rule[][Identifier] applicableRules = [
 	"+"		:	[&addition],

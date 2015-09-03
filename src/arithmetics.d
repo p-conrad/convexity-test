@@ -38,6 +38,11 @@ unittest {
 	assert (addition(E("+", lnX, E("-", linFun1))) == P(concave, unspecified));
 	assert (addition(E("+", expX, linFun1)) == P(convex, unspecified));
 	assert (addition(E("+", linFun1, linFun2)) == P(linear, unspecified));
+	// exp(-2x+(-5)) + (-ln(x))
+	assert (addition(E("+", E("exp", linFun2), E("-", lnX))) == P(convex, unspecified));
+	// multiple addition
+	assert (addition(E("+", sc1, E("+", sc2, linFun1))) == P(linear, nondecreasing));
+	assert (addition(E("+", expX, lnX)) == unknownResult);
 }
 
 Property subtraction(Expression e, Classifier left, Classifier right) {
@@ -52,9 +57,12 @@ Property subtraction(Expression e, Classifier left, Classifier right) {
 }
 
 unittest {
+	assert (subtraction(E("-", linFun1, linFun2)) == P(linear, nondecreasing));
 	assert (subtraction(E("-", lnX, sc1)) == P(concave, unspecified));
 	assert (subtraction(E("-", lnX, sc2)) == P(concave, unspecified));
 	assert (subtraction(E("-", sc1, lnX)) == P(convex, unspecified));
+	assert (subtraction(E("-", E("exp", linFun2), lnX)) == P(convex, unspecified));
+	assert (subtraction(E("-", E("exp", linFun2), expX)) == unknownResult);
 }
 
 Property multiplication(Expression e, Classifier left, Classifier right) {
