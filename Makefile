@@ -1,7 +1,7 @@
 SRCDIR := ./src
 
 DC := dmd
-DFLAGS := -debug -g -unittest -inline -wi -I$(SRCDIR)
+DFLAGS := -debug -g -unittest -wi -I$(SRCDIR)
 LDFLAGS := -main
 LD := dmd
 
