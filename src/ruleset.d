@@ -104,9 +104,13 @@ Result compositionRule(Expression e) {
 		return Result(Curvature.convex, Monotonicity.unspecified);
 	if (parent.isConvex && parent.isNonIncreasing && child.isConcave)
 		return Result(Curvature.convex, Monotonicity.unspecified);
+	if (parent.isConcave && parent.isNonMonotonic && child.isLinear)
+		return Result(Curvature.convex, Monotonicity.unspecified);
 	if (parent.isConcave && parent.isNonDecreasing && child.isConcave)
 		return Result(Curvature.concave, Monotonicity.unspecified);
 	if (parent.isConcave && parent.isNonIncreasing && child.isConvex)
+		return Result(Curvature.concave, Monotonicity.unspecified);
+	if (parent.isConcave && parent.isNonMonotonic && child.isLinear)
 		return Result(Curvature.concave, Monotonicity.unspecified);
 
 	return unknownResult;

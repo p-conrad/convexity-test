@@ -13,6 +13,7 @@ enum unknownResult = Result(Curvature.unspecified, Monotonicity.unspecified);
 bool isNonDecreasing(Monotonicity m) { return (m == Monotonicity.nondecreasing || m == Monotonicity.constant); }
 bool isNonIncreasing(Monotonicity m) { return (m == Monotonicity.nonincreasing || m == Monotonicity.constant); }
 bool isConstant(Monotonicity m) { return m == Monotonicity.constant; }
+bool isNonMonotonic(Monotonicity m) { return m == Monotonicity.unspecified; }
 bool isConvex(Curvature c) { return (c == Curvature.convex || c == Curvature.linear); }
 bool isConcave(Curvature c) { return (c == Curvature.concave || c == Curvature.linear); }
 bool isLinear(Curvature c) { return c == Curvature.linear; }
@@ -20,6 +21,7 @@ bool isLinear(Curvature c) { return c == Curvature.linear; }
 bool isNonDecreasing(Result r) { return isNonDecreasing(r.mono); }
 bool isNonIncreasing(Result r) { return isNonIncreasing(r.mono); }
 bool isConstant(Result r) { return isConstant(r.mono); }
+bool isNonMonotonic(Result r) { return isNonMonotonic(r.mono); }
 bool isConvex(Result r) { return isConvex(r.curv); }
 bool isConcave(Result r) { return isConcave(r.curv); }
 bool isLinear(Result r) { return isLinear(r.curv); }
