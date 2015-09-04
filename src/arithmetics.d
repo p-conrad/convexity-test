@@ -88,36 +88,12 @@ Result division(Expression e, Classifier left, Classifier right) {
 	// We must have at least one constant value here
 	if (!left.isConstantValue && !right.isConstantValue) return unknownResult;
 
-	// Division with a constant value depends on both the side of the scalar and whether it is smaller or
-	// larger than zero; also special rules apply if the function divided by is linear
-	auto result = left.isConstantValue ? analyze(e.right) : analyze(e.left);
-	bool positiveConstant = left.isConstantValue ? left.isPositive : right.isPositive;
-
-	if (left.isConstantValue) {
-		if (left.isPositive && result.isLinear) {
-			return result.isNonDecreasing
-				? Result(Curvature.convex, Monotonicity.nonincreasing)
-				: Result(Curvature.concave, Monotonicity.nondecreasing);
-		}
-		if (left.isNegative && result.isLinear) {
-			return result.isNonDecreasing
-				? Result(Curvature.concave, Monotonicity.nondecreasing)
-				: Result(Curvature.convex, Monotonicity.nonincreasing);
-		}
-		return positiveConstant ? result.complement : result;
-	}
-	return positiveConstant ? result : result.complement;
+	// dividing functions: discontinuities -> not convex in general
+	if (left.isConstantValue) return unknownResult;
+	return right.isPositive ? analyze(e.left) : analyze(e.left).complement;
 }
 
 unittest {
-	assert (division(E("/", sc1, lnX)) == R(convex, unspecified));
-	assert (division(E("/", sc1, E("-", lnX))) == R(concave, unspecified));
-
-	// division by linear functions, using some more complex examples
-	assert (division(E("/", sc1, E("x"))) == R(convex, nonincreasing));
-	assert (division(E("/", sc1, E("-", x))) == R(concave, nondecreasing));
-	assert (division(E("/", sc1, linFun2)) == R(concave, nondecreasing));
-	assert (division(E("/", sc1, E("-", linFun2))) == R(convex, nonincreasing));
-	assert (division(E("/", sc2, linFun2)) == R(convex, nonincreasing));
-	assert (division(E("/", sc2, E("-", linFun2))) == R(concave, nondecreasing));
+	assert (division(E("/", expX, sc1)) == Result(Curvature.convex, Monotonicity.unspecified));
+	assert (division(E("/", expX, sc2)) == Result(Curvature.concave, Monotonicity.unspecified));
 }
