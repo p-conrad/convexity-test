@@ -93,24 +93,22 @@ unittest {
 
 /// Composition rules to be used for a function f(x) = g(h(x)).
 Result compositionRule(Expression e) {
-	// We need to have exactly one child: h(x), while g is the expression itself.
-	// TODO: A function may actually have more than one argument.
-	assert (e.childCount == 1);
+	assert (e.id in functionAttributes);
 
 	auto parent = functionAttributes[e.id];
-	auto child = analyze(e.child);
 
-	if (parent.isConvex && parent.isNonDecreasing && child.isConvex)
+	import std.algorithm : all;
+	if (parent.isConvex && parent.isNonDecreasing && all!(a => analyze(a).isConvex)(e.children))
 		return Result(Curvature.convex, Monotonicity.unspecified);
-	if (parent.isConvex && parent.isNonIncreasing && child.isConcave)
+	if (parent.isConvex && parent.isNonIncreasing && all!(a => analyze(a).isConcave)(e.children))
 		return Result(Curvature.convex, Monotonicity.unspecified);
-	if (parent.isConcave && parent.isNonMonotonic && child.isLinear)
+	if (parent.isConcave && parent.isNonMonotonic && all!(a => analyze(a).isLinear)(e.children))
 		return Result(Curvature.convex, Monotonicity.unspecified);
-	if (parent.isConcave && parent.isNonDecreasing && child.isConcave)
+	if (parent.isConcave && parent.isNonDecreasing && all!(a => analyze(a).isConcave)(e.children))
 		return Result(Curvature.concave, Monotonicity.unspecified);
-	if (parent.isConcave && parent.isNonIncreasing && child.isConvex)
+	if (parent.isConcave && parent.isNonIncreasing && all!(a => analyze(a).isConvex)(e.children))
 		return Result(Curvature.concave, Monotonicity.unspecified);
-	if (parent.isConcave && parent.isNonMonotonic && child.isLinear)
+	if (parent.isConcave && parent.isNonMonotonic && all!(a => analyze(a).isLinear)(e.children))
 		return Result(Curvature.concave, Monotonicity.unspecified);
 
 	return unknownResult;
