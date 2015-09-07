@@ -43,9 +43,10 @@ enum Rule[][Identifier] applicableRules = [
 	"-"		:	[&subtraction],
 	".*"	:	[&multiplication],
 	"/"		:	[&division],
+	"^"		:	[&power],
 	"ln"	:	[&compositionRule],
 	"exp"	:	[&compositionRule],
-	"abs"	:	[&emptyRule]
+	"abs"	:	[&emptyRule],
 ];
 
 /// The algorithm checking for convexity.
@@ -118,6 +119,34 @@ unittest {
 	assert (compositionRule(E("exp", linFun1)) == R(convex, unspecified));
 	assert (compositionRule(E("exp", E("-", E("ln", linFun1)))) == R(convex, unspecified));
 	assert (compositionRule(E("exp", expX)) == R(convex, unspecified));
+}
+
+/// The power function, checking for convexity of expressions in the form x^p.
+/// Simply: x^p, p in (0..1) -> concave, x^p, p in {2, 4, 6, ...} -> convex, else unknown.
+Result power(Expression e) {
+	assert (e.id == "^");
+	assert (e.childCount == 2);
+
+	import classifier;
+	if (!e.left.isArgument || !e.right.isNumber) return unknownResult;
+
+	auto number = getNumericValue(e.right);
+	if (number < 0) return unknownResult;
+	if (number == 0) return Result(Curvature.linear, Monotonicity.constant);
+	if (number > 0 && number < 1) return Result(Curvature.concave, Monotonicity.nondecreasing);
+	if (number == 1) return analyze(e.left);
+	if (number % 1 != 0 || number % 2 == 1) return unknownResult;
+	return Result(Curvature.convex, Monotonicity.unspecified);
+}
+
+unittest {
+	assert (power(E("^", x, sc1)) == unknownResult);
+	assert (power(E("^", x, sc2)) == unknownResult);
+	assert (power(E("^", lnX, sc1)) == unknownResult);
+	assert (power(E("^", sc1, lnX)) == unknownResult);
+	assert (power(E("^", x, E("6.5"))) == unknownResult);
+	assert (power(E("^", x, E("6"))) == R(convex, unspecified));
+	assert (power(E("^", x, E("0.5"))) == R(concave, nondecreasing));
 }
 
 /// An empty rule for expressions which should not occur due to transformations (e.g. abs).
