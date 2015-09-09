@@ -41,7 +41,7 @@ unittest {
 enum Rule[][Identifier] applicableRules = [
 	"+"		:	[&addition],
 	"-"		:	[&subtraction],
-	".*"	:	[&multiplication],
+	".*"	:	[&multiplication, &dotProduct],
 	"/"		:	[&division],
 	"^"		:	[&power],
 	"ln"	:	[&compositionRule],
@@ -147,6 +147,34 @@ unittest {
 	assert (power(E("^", x, E("6.5"))) == unknownResult);
 	assert (power(E("^", x, E("6"))) == R(convex, unspecified));
 	assert (power(E("^", x, E("0.5"))) == R(concave, nondecreasing));
+}
+
+Result dotProduct(Expression e) {
+	import classifier;
+	assert (e.id == ".*");
+	if (!e.left.isVector || !e.right.isVector) return unknownResult;
+
+	if (e.left.isConstantVector && e.right.isConstantVector) return Result(Curvature.linear, Monotonicity.constant);
+
+	import std.algorithm : max;
+	auto size = max(e.left.childCount, e.right.childCount);
+
+	auto leftVector = toVector(e.left, size);
+	auto rightVector = toVector(e.right, size);
+
+	// pointwise multiplication between each element
+	Result[] results;
+	for (size_t i = 0; i < size; i++)
+		results ~= analyze(Expression(".*", leftVector[i], rightVector[i]));
+
+	// addition of each element
+	import std.algorithm : reduce;
+	return reduce!((a, b) => weaker(a, b))(results);
+}
+
+unittest {
+	assert (dotProduct(E(".*", E("vector", E("2")), E("vector", expX, E("-", lnX)))) == R(convex, unspecified));
+	assert (dotProduct(E(".*", E("*", E("vector", E("2")), E("vector", expX, lnX)))) == unknownResult);
 }
 
 /// An empty rule for expressions which should not occur due to transformations (e.g. abs).
