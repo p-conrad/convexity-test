@@ -1,31 +1,19 @@
+/**
+ * Rules checking for the convexity of arithmetic expressions. Although not checked for explicitly,
+ * passing two constant values will yield the correct result (linear, constant) implicitly, except
+ * for division.
+ */
+module arithmetics;
+
 import ruleset;
 import expression;
 import attributes;
-import classifier;
 
-/// The calling function, doing some preparatory work common to all four functions so we don't need
-/// to do the same things in every function (DRY) but still have the advantage of giving each function
-/// in applicableRules their own name instead of calling the now removed arithmeticRule
-Result caller(Expression e, Result function(Expression, Classifier, Classifier) rule) {
-	if (e.childCount != 2) return unknownResult;
-
-	auto left = classify(e.left);
-	auto right = classify(e.right);
-
-	if (left.isConstantValue && right.isConstantValue) return Result(Curvature.linear, Monotonicity.constant);
-
-	return rule(e, left, right);
-}
-
-Result addition(Expression e) { return caller(e, &addition); }
-Result subtraction(Expression e) { return caller(e, &subtraction); }
-Result multiplication(Expression e) { return caller(e, &multiplication); }
-Result division(Expression e) { return caller(e, &division); }
-
-Result addition(Expression e, Classifier left, Classifier right) {
+Result addition(Expression e) {
 	assert (e.id == "+");
+	assert (e.childCount == 2);
 
-	if (left.isConstantValue || right.isConstantValue) return analyze(left.isConstantValue ? e.right: e.left);
+	if (e.left.isConstant || e.right.isConstant) return analyze(e.left.isConstant ? e.right: e.left);
 
 	// Convex functions are closed under addition
 	return weaker(analyze(e.left), analyze(e.right));
@@ -45,12 +33,13 @@ unittest {
 	assert (addition(E("+", expX, lnX)) == unknownResult);
 }
 
-Result subtraction(Expression e, Classifier left, Classifier right) {
+Result subtraction(Expression e) {
 	assert (e.id == "-");
+	assert (e.childCount == 2);
 
 	// Subtraction with a constant depends on the side of the constant
-	if (left.isConstantValue) return analyze(e.right).complement;
-	if (right.isConstantValue) return analyze(e.left);
+	if (e.left.isConstant) return analyze(e.right).complement;
+	if (e.right.isConstant) return analyze(e.left);
 	
 	// Like addition: f + (-g)
 	return weaker(analyze(e.left), analyze(e.right).complement);
@@ -65,15 +54,15 @@ unittest {
 	assert (subtraction(E("-", E("exp", linFun2), expX)) == unknownResult);
 }
 
-Result multiplication(Expression e, Classifier left, Classifier right) {
+Result multiplication(Expression e) {
 	assert (e.id == ".*");
+	assert (e.childCount == 2);
 
-	// We must have at least one constant value here
-	if (!left.isConstantValue && !right.isConstantValue) return unknownResult;
+	if (!e.left.isConstant && !e.right.isConstant) return unknownResult;
 
 	// Multiplication with a scalar depends on whether that scalar is smaller or larger than zero
-	auto result = left.isConstantValue ? analyze(e.right) : analyze(e.left);
-	bool positiveConstant = left.isConstantValue ? left.isPositive : right.isPositive;
+	auto result = e.left.isConstant ? analyze(e.right) : analyze(e.left);
+	bool positiveConstant = e.left.isConstant ? e.left.isPositive : e.right.isPositive;
 	return positiveConstant ? result : result.complement;
 }
 
@@ -82,15 +71,16 @@ unittest {
 	assert (multiplication(E(".*", lnX, sc2)) == R(convex, unspecified));
 }
 
-Result division(Expression e, Classifier left, Classifier right) {
+Result division(Expression e) {
 	assert (e.id == "/");
+	assert (e.childCount == 2);
 
-	// We must have at least one constant value here
-	if (!left.isConstantValue && !right.isConstantValue) return unknownResult;
+	if (e.left.isConstant && e.right.isConstant) return Result(Curvature.linear, Monotonicity.constant);
+	if (!e.left.isConstant && !e.right.isConstant) return unknownResult;
 
 	// dividing functions: discontinuities -> not convex in general
-	if (left.isConstantValue) return unknownResult;
-	return right.isPositive ? analyze(e.left) : analyze(e.left).complement;
+	if (e.left.isConstant) return unknownResult;
+	return e.right.isPositive ? analyze(e.left) : analyze(e.left).complement;
 }
 
 unittest {

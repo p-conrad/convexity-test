@@ -1,3 +1,9 @@
+/**
+ * The main module, containing the algorithm checking for convexity, basic definitions, rules, and
+ * definitions of which rules to apply to a certain type of expression.
+ */
+module ruleset;
+
 import attributes;
 import expression;
 import arithmetics;
@@ -51,9 +57,8 @@ enum Rule[][Identifier] applicableRules = [
 
 /// The algorithm checking for convexity.
 Result analyze(Expression e) {
-	import classifier : isNumber, isArgument;
-	if (isNumber(e)) return Result(Curvature.linear, Monotonicity.constant);
-	if (isArgument(e)) return Result(Curvature.linear, Monotonicity.nondecreasing);
+	if (e.isConstant) return Result(Curvature.linear, Monotonicity.constant);
+	if (e.isArgument) return Result(Curvature.linear, Monotonicity.nondecreasing);
 
 	assert (e.id in applicableRules);
 
@@ -127,8 +132,7 @@ Result power(Expression e) {
 	assert (e.id == "^");
 	assert (e.childCount == 2);
 
-	import classifier;
-	if (!e.left.isArgument || !e.right.isNumber) return unknownResult;
+	if (!e.left.isArgument || !e.right.isScalar) return unknownResult;
 
 	auto number = getNumericValue(e.right);
 	if (number < 0) return unknownResult;
@@ -150,10 +154,9 @@ unittest {
 }
 
 Result dotProduct(Expression e) {
-	import classifier;
 	assert (e.id == ".*");
-	if (!e.left.isVector || !e.right.isVector) return unknownResult;
 
+	if (!e.left.isVector || !e.right.isVector) return unknownResult;
 	if (e.left.isConstantVector && e.right.isConstantVector) return Result(Curvature.linear, Monotonicity.constant);
 
 	import std.algorithm : max;
@@ -174,10 +177,11 @@ Result dotProduct(Expression e) {
 
 unittest {
 	assert (dotProduct(E(".*", E("vector", E("2")), E("vector", expX, E("-", lnX)))) == R(convex, unspecified));
-	assert (dotProduct(E(".*", E("*", E("vector", E("2")), E("vector", expX, lnX)))) == unknownResult);
+	assert (dotProduct(E(".*", E("vector", E("2")), E("vector", expX, lnX))) == unknownResult);
 }
 
 /// An empty rule for expressions which should not occur due to transformations (e.g. abs).
 Result emptyRule(Expression e) {
-	assert (0, "emptyRule has been called");
+	import std.string : format;
+	assert (0, format("emptyRule has been called for: '%s'", e.id));
 }
