@@ -36,10 +36,12 @@ Expression child(Expression e) { return e.left; }
 /**
  * Classification of an expression.
  * As long as no distinction is needed functions and operators will be grouped together in
- * functionSymbol for simplicity.
+ * functionSymbol for simplicity. positiveVector and negativeVector means that only scalar values
+ * larger than or smaller than zero are present. A vector of arguments shall be classified
+ * functionArgument, and any other vector shall be undefined (e.g. useless).
  */
-enum Classifier { functionSymbol, functionArgument, positiveScalar, negativeScalar,
-	constantVector, nonConstantVector }
+enum Classifier { functionSymbol, functionArgument, positiveScalar, negativeScalar, positiveVector,
+	negativeVector, undefined }
 
 bool isFunctionOrOperator(Classifier c) { return c == Classifier.functionSymbol; }
 bool isFunctionOrOperator(Expression e) { return isFunctionOrOperator(e.type); }
@@ -47,19 +49,15 @@ bool isArgument(Classifier c) { return c == Classifier.functionArgument; }
 bool isArgument(Expression e) { return isArgument(e.type); }
 bool isScalar(Classifier c) { return  c == Classifier.positiveScalar || c == Classifier.negativeScalar; }
 bool isScalar(Expression e) { return isScalar(e.type); }
-bool isConstant(Classifier c) { return c.isScalar || c.isConstantVector; }
-bool isConstant(Expression e) { return isConstant(e.type); }
-bool isPositive(Classifier c) { return c == Classifier.positiveScalar; }
-bool isPositive(Expression e) { return isPositive(e.type); }
-bool isNegative(Classifier c) { return c == Classifier.negativeScalar; }
-bool isNegative(Expression e) { return isNegative(e.type); }
-bool isConstantVector(Classifier c) { return c == Classifier.constantVector; }
-bool isConstantVector(Expression e) { return isConstantVector(e.type); }
-bool isNonConstantVector(Classifier c) { return c == Classifier.nonConstantVector; }
-bool isNonConstantVector(Expression e) { return isNonConstantVector(e.type); }
-bool isVector(Classifier c) { return c.isConstantVector || c.isNonConstantVector; }
+bool isVector(Classifier c) { return c == Classifier.positiveVector || c == Classifier.negativeVector; }
 bool isVector(Expression e) { return isVector(e.type); }
-
+// Vectors either consist of constants or arguments - the latter shall be classified functionArgument.
+bool isConstant(Classifier c) { return c.isScalar || c.isVector; }
+bool isConstant(Expression e) { return isConstant(e.type); }
+bool isPositive(Classifier c) { return c == Classifier.positiveScalar || c == Classifier.positiveVector; }
+bool isPositive(Expression e) { return isPositive(e.type); }
+bool isNegative(Classifier c) { return c == Classifier.negativeScalar || c == Classifier.negativeVector; }
+bool isNegative(Expression e) { return isNegative(e.type); }
 
 /// Returns: the numeric value of an expression identifier if it is a number. Raises an exception otherwise.
 double getNumericValue(Identifier i) {
@@ -115,39 +113,34 @@ unittest {
 	assert (!"".isFunctionOrOperator);
 }
 
-/// Returns: true if an expression identifier is a vector of any size
+/// Returns: true if an expression identifier is a vector of any type
 bool isVector(Identifier i) { return i == "vector"; }
-
-/// Returns: true if an expression is a vector consisting only of constants
-bool isConstantVector(Identifier i, Expression[] children) {
-	import std.algorithm : all;
-	return (i.isVector && all!(a => isNumber(a.id))(children));
-}
-
-/// Returns: true if an expression is a non-constantVector
-bool isNonConstantVector(Identifier i, Expression[] children) { return (i.isVector && !i.isConstantVector(children)); }
-
-/// Returns: An array of expressions for a given vector. Useful for expanding a vector where
-/// only one argument is given, otherwise simply the children of that expression will be returned.
-Expression[] toVector(Expression e, size_t len) {
-	assert (e.id == "vector");
-	assert (e.childCount == 1 || e.childCount == len);
-
-	if (e.childCount == len) return e.children;
-
-	import std.array : uninitializedArray;
-	return uninitializedArray!(Expression[])(len)[] = Expression(e.child.id);
-}
 
 /// Returns: The Classifier for a given expression
 Classifier classify(Identifier i, Expression[] children) {
 	if (i.isFunctionOrOperator) return Classifier.functionSymbol;
 	if (i.isArgument) return Classifier.functionArgument;
+	if (i.isVector && children[0].isArgument) { assert (children.length == 1); return Classifier.functionArgument; }
 	if (i.isNumber && i.getNumericValue > 0) return Classifier.positiveScalar;
 	if (i.isNumber && i.getNumericValue < 0) return Classifier.negativeScalar;
-	if (i.isConstantVector(children)) return Classifier.constantVector;
-	if (i.isNonConstantVector(children)) return Classifier.nonConstantVector;
+	import std.algorithm : all;
+	if (i.isVector && children.all!(a => a.getNumericValue > 0)) return Classifier.positiveVector;
+	if (i.isVector && children.all!(a => a.getNumericValue < 0)) return Classifier.negativeVector;
+	if (i.isVector) return Classifier.undefined;
 
 	import std.string : format;
 	assert (0, format("Failed to classify expression: '%s'", i));
+}
+
+unittest {
+	import ruleset : E;
+	assert (E("ln").isFunctionOrOperator);
+	assert (E("+").isFunctionOrOperator);
+	assert (E("vector", E("x")).isArgument);
+	assert (E("2").type == Classifier.positiveScalar);
+	assert (E("-2").type == Classifier.negativeScalar);
+	assert (E("vector", E("1"), E("2")).type == Classifier.positiveVector);
+	assert (E("vector", E("-1"), E("-2")).type == Classifier.negativeVector);
+	assert (E("vector", E("-1"), E("-2")).type == Classifier.negativeVector);
+	assert (E("vector", E("-1"), E("2")).type == Classifier.undefined);
 }
