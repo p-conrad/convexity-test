@@ -32,6 +32,9 @@ version (unittest) {
 	enum lnX = E("ln", E("x"));
 	enum linFun1 = E("+", E(".*", E("2"), E("x")), E("5"));
 	enum linFun2 = E("+", E(".*", E("-2"), E("x")), E("-5"));
+	enum vecX = E("vector", E("x"));
+	enum ones = E("vector", E("1"));
+	enum nVec = E("vector", E("-1"));
 }
 
 unittest {
@@ -48,6 +51,7 @@ enum Rule[][Identifier] applicableRules = [
 	"+"		:	[&addition],
 	"-"		:	[&subtraction],
 	".*"	:	[&multiplication],
+	"s*"	:	[&multiplication],
 	"/"		:	[&division],
 	"^"		:	[&power],
 	"ln"	:	[&compositionRule],

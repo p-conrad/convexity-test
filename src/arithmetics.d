@@ -55,12 +55,13 @@ unittest {
 }
 
 Result multiplication(Expression e) {
-	assert (e.id == ".*");
+	// currently works for both types of multiplication
+	assert (e.id == ".*" || e.id == "s*");
 	assert (e.childCount == 2);
 
 	if (!e.left.isConstant && !e.right.isConstant) return unknownResult;
 
-	// Multiplication with a scalar depends on whether that scalar is smaller or larger than zero
+	// Multiplication with a constant depends on whether that constant is positive or negative
 	auto result = e.left.isConstant ? analyze(e.right) : analyze(e.left);
 	bool positiveConstant = e.left.isConstant ? e.left.isPositive : e.right.isPositive;
 	return positiveConstant ? result : result.complement;
@@ -69,6 +70,15 @@ Result multiplication(Expression e) {
 unittest {
 	assert (multiplication(E(".*", lnX, sc1)) == R(concave, unspecified));
 	assert (multiplication(E(".*", lnX, sc2)) == R(convex, unspecified));
+	// (weighted) sums expressed as a scalar product
+	assert (multiplication(E(".*", E("exp", vecX), ones)) == R(convex, unspecified));
+	assert (multiplication(E(".*", E("exp", vecX), E("vector", E("1"), E("-2")))) == R(concave, unspecified));
+	assert (multiplication(E(".*", E("ln", vecX), nVec)) == R(convex, unspecified));
+	assert (multiplication(E(".*", E("ln", vecX), ones)) == R(concave, unspecified));
+	assert (multiplication(E(".*", E("s*", E("2"), vecX), ones)) == R(linear, nondecreasing));
+	assert (multiplication(E(".*", E("s*", E("-2"), vecX), ones)) == R(linear, nonincreasing));
+	assert (multiplication(E(".*", E("vector", E("1"), E("-2")), vecX)) == R(linear, nonincreasing));
+	assert (multiplication(E(".*", E("vector", E("-1"), E("2")), vecX)) == R(linear, nondecreasing));
 }
 
 Result division(Expression e) {
