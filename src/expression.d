@@ -40,7 +40,8 @@ Expression child(Expression e) { return e.left; }
  * larger than or smaller than zero are present. A vector of arguments shall be classified
  * functionArgument, and any other vector shall be undefined (e.g. useless).
  */
-enum Classifier { functionSymbol, functionArgument, positiveScalar, negativeScalar, positiveVector, negativeVector }
+enum Classifier { functionSymbol, functionArgument, positiveScalar, negativeScalar, positiveVector,
+	negativeVector, pdMatrix, ndMatrix }
 
 bool isFunctionOrOperator(Classifier c) { return c == Classifier.functionSymbol; }
 bool isFunctionOrOperator(Expression e) { return isFunctionOrOperator(e.type); }
@@ -50,12 +51,16 @@ bool isScalar(Classifier c) { return  c == Classifier.positiveScalar || c == Cla
 bool isScalar(Expression e) { return isScalar(e.type); }
 bool isVector(Classifier c) { return c == Classifier.positiveVector || c == Classifier.negativeVector; }
 bool isVector(Expression e) { return isVector(e.type); }
+bool isMatrix(Classifier c) { return c == Classifier.pdMatrix || c == Classifier.ndMatrix; }
+bool isMatrix(Expression e) { return isMatrix(e.type); }
 // Vectors either consist of constants or arguments - the latter shall be classified functionArgument.
-bool isConstant(Classifier c) { return c.isScalar || c.isVector; }
+bool isConstant(Classifier c) { return c.isScalar || c.isVector || c.isMatrix; }
 bool isConstant(Expression e) { return isConstant(e.type); }
-bool isPositive(Classifier c) { return c == Classifier.positiveScalar || c == Classifier.positiveVector; }
+bool isPositive(Classifier c) { return c == Classifier.positiveScalar || c == Classifier.positiveVector
+									|| c == Classifier.pdMatrix; }
 bool isPositive(Expression e) { return isPositive(e.type); }
-bool isNegative(Classifier c) { return c == Classifier.negativeScalar || c == Classifier.negativeVector; }
+bool isNegative(Classifier c) { return c == Classifier.negativeScalar || c == Classifier.negativeVector
+									|| c == Classifier.ndMatrix; }
 bool isNegative(Expression e) { return isNegative(e.type); }
 
 /// Returns: the numeric value of an expression identifier if it is a number. Raises an exception otherwise.
@@ -93,7 +98,7 @@ unittest {
 bool isArgument(Identifier i) {
 	import std.array : front;
 	import std.uni : isAlpha;
-	return (i.front.isAlpha() && !i.isFunctionOrOperator && !i.isVector);
+	return (i.front.isAlpha() && !i.isFunctionOrOperator && !i.isVector && !i.isMatrix);
 }
 
 // Outside because putting it inside will make the compiler cry about circular dependencies for some reason.
@@ -115,6 +120,9 @@ unittest {
 /// Returns: true if an expression identifier is a vector of any type
 bool isVector(Identifier i) { return i == "vector"; }
 
+/// Returns: true if an expression identifier is a matrix of any type
+bool isMatrix(Identifier i) { return i == "matrix"; }
+
 /// Returns: The Classifier for a given expression
 Classifier classify(Identifier i, Expression[] children) {
 	if (i.isFunctionOrOperator) return Classifier.functionSymbol;
@@ -125,6 +133,8 @@ Classifier classify(Identifier i, Expression[] children) {
 	import std.algorithm : sum, map;
 	if (i.isVector && sum(children.map!(a => a.getNumericValue)) > 0) return Classifier.positiveVector;
 	if (i.isVector && sum(children.map!(a => a.getNumericValue)) < 0) return Classifier.negativeVector;
+	if (i.isMatrix && children[0].id == "+") { assert (children.length == 1); return Classifier.pdMatrix; }
+	if (i.isMatrix && children[0].id == "-") { assert (children.length == 1); return Classifier.ndMatrix; }
 
 	import std.string : format;
 	assert (0, format("Failed to classify expression: '%s'", i));
@@ -142,4 +152,6 @@ unittest {
 	assert (E("vector", E("-1"), E("-2")).type == Classifier.negativeVector);
 	assert (E("vector", E("-1"), E("2")).type == Classifier.positiveVector);
 	assert (E("vector", E("1"), E("-2")).type == Classifier.negativeVector);
+	assert (E("matrix", E("+")).type == Classifier.pdMatrix);
+	assert (E("matrix", E("-")).type == Classifier.ndMatrix);
 }
