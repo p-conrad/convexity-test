@@ -36,9 +36,9 @@ Expression child(Expression e) { return e.left; }
 /**
  * Classification of an expression.
  * As long as no distinction is needed functions and operators will be grouped together in
- * functionSymbol for simplicity. positiveVector and negativeVector means that only scalar values
- * larger than or smaller than zero are present. A vector of arguments shall be classified
- * functionArgument, and any other vector shall be undefined (e.g. useless).
+ * functionSymbol for simplicity. positiveVector and negativeVector means that its length is smaller
+ * or larger than zero. A vector of arguments shall be classified functionArgument. pdMatrix and
+ * ndMatrix are positive/negative semidefinite matrices.
  */
 enum Classifier { functionSymbol, functionArgument, positiveScalar, negativeScalar, positiveVector,
 	negativeVector, pdMatrix, ndMatrix }
