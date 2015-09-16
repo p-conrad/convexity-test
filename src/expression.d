@@ -40,8 +40,7 @@ Expression child(Expression e) { return e.left; }
  * larger than or smaller than zero are present. A vector of arguments shall be classified
  * functionArgument, and any other vector shall be undefined (e.g. useless).
  */
-enum Classifier { functionSymbol, functionArgument, positiveScalar, negativeScalar, positiveVector,
-	negativeVector, undefined }
+enum Classifier { functionSymbol, functionArgument, positiveScalar, negativeScalar, positiveVector, negativeVector }
 
 bool isFunctionOrOperator(Classifier c) { return c == Classifier.functionSymbol; }
 bool isFunctionOrOperator(Expression e) { return isFunctionOrOperator(e.type); }
@@ -123,10 +122,9 @@ Classifier classify(Identifier i, Expression[] children) {
 	if (i.isVector && children[0].isArgument) { assert (children.length == 1); return Classifier.functionArgument; }
 	if (i.isNumber && i.getNumericValue > 0) return Classifier.positiveScalar;
 	if (i.isNumber && i.getNumericValue < 0) return Classifier.negativeScalar;
-	import std.algorithm : all;
-	if (i.isVector && children.all!(a => a.getNumericValue > 0)) return Classifier.positiveVector;
-	if (i.isVector && children.all!(a => a.getNumericValue < 0)) return Classifier.negativeVector;
-	if (i.isVector) return Classifier.undefined;
+	import std.algorithm : sum, map;
+	if (i.isVector && sum(children.map!(a => a.getNumericValue)) > 0) return Classifier.positiveVector;
+	if (i.isVector && sum(children.map!(a => a.getNumericValue)) < 0) return Classifier.negativeVector;
 
 	import std.string : format;
 	assert (0, format("Failed to classify expression: '%s'", i));
@@ -142,5 +140,6 @@ unittest {
 	assert (E("vector", E("1"), E("2")).type == Classifier.positiveVector);
 	assert (E("vector", E("-1"), E("-2")).type == Classifier.negativeVector);
 	assert (E("vector", E("-1"), E("-2")).type == Classifier.negativeVector);
-	assert (E("vector", E("-1"), E("2")).type == Classifier.undefined);
+	assert (E("vector", E("-1"), E("2")).type == Classifier.positiveVector);
+	assert (E("vector", E("1"), E("-2")).type == Classifier.negativeVector);
 }
