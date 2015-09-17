@@ -138,7 +138,7 @@ bool isMatrix(Identifier i) { return i == "matrix"; }
 Classifier classify(Identifier i, Expression[] children) {
 	if (i.isFunctionOrOperator) return Classifier.functionSymbol;
 	if (i.isArgument) return Classifier.functionArgument;
-	if (i.isVector && children[0].isArgument) return Classifier.functionArgument; }
+	if (i.isVector && children[0].isArgument) return Classifier.functionArgument;
 	if (i.isNumber && i.getNumericValue > 0) return Classifier.positiveScalar;
 	if (i.isNumber && i.getNumericValue < 0) return Classifier.negativeScalar;
 	import std.algorithm : sum, map;
