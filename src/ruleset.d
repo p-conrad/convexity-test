@@ -35,6 +35,8 @@ version (unittest) {
 	enum vecX = E("vector", E("x"));
 	enum ones = E("vector", E("1"));
 	enum nVec = E("vector", E("-1"));
+	enum pMatrix = E("matrix", Classifier.psdMatrix);
+	enum nMatrix = E("matrix", Classifier.nsdMatrix);
 }
 
 unittest {
@@ -52,6 +54,7 @@ enum Rule[][Identifier] applicableRules = [
 	"-"		:	[&subtraction],
 	".*"	:	[&multiplication],
 	"s*"	:	[&multiplication],
+	"m*"	:	[&matrixMultiplication],
 	"/"		:	[&division],
 	"^"		:	[&power],
 	"ln"	:	[&compositionRule],

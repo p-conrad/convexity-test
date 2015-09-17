@@ -75,10 +75,35 @@ unittest {
 	assert (multiplication(E(".*", E("exp", vecX), E("vector", E("1"), E("-2")))) == R(concave, unspecified));
 	assert (multiplication(E(".*", E("ln", vecX), nVec)) == R(convex, unspecified));
 	assert (multiplication(E(".*", E("ln", vecX), ones)) == R(concave, unspecified));
+	// linear functions
 	assert (multiplication(E(".*", E("s*", E("2"), vecX), ones)) == R(linear, nondecreasing));
 	assert (multiplication(E(".*", E("s*", E("-2"), vecX), ones)) == R(linear, nonincreasing));
 	assert (multiplication(E(".*", E("vector", E("1"), E("-2")), vecX)) == R(linear, nonincreasing));
 	assert (multiplication(E(".*", E("vector", E("-1"), E("2")), vecX)) == R(linear, nondecreasing));
+}
+
+/// Returns: the Result for a matrix multiplication in the form x'Ax. Only two children are given,
+/// the vector does not need to be transposed explicitly.
+Result matrixMultiplication(Expression e) {
+	assert (e.id == "m*");
+	assert (e.childCount == 2);
+	assert (e.right.isMatrix);
+
+	if (e.left.isConstant) return Result(Curvature.linear, Monotonicity.constant);
+
+	// matrix type not specified
+	if (!e.right.isPositive && !e.right.isNegative) return unknownResult;
+	// squares of non-linear functions -> unknown
+	if (!analyze(e.left).isLinear) return unknownResult;
+	return Result(e.right.isPositive ? Curvature.convex : Curvature.concave, Monotonicity.unspecified);
+}
+
+unittest {
+	assert (matrixMultiplication(E("m*", vecX, pMatrix)) == R(convex, unspecified));
+	assert (matrixMultiplication(E("m*", E(".*", E("2"), vecX), pMatrix)) == R(convex, unspecified));
+	assert (matrixMultiplication(E("m*", vecX, nMatrix)) == R(concave, unspecified));
+	assert (matrixMultiplication(E("m*", E(".*", E("2"), vecX), nMatrix)) == R(concave, unspecified));
+	assert (matrixMultiplication(E("m*", E("exp", vecX), nMatrix)) == unknownResult);
 }
 
 Result division(Expression e) {
