@@ -101,11 +101,15 @@ unittest {
 	assert (isNumber("1e-4"));
 }
 
+/// Some keywords which do not have a rule associated with but shall not be classified as arguments
+enum reservedWords = [ "vector", "matrix", "det", "diag", "tr" ];
+
 /// Returns: true if an expression identifier is a function argument
 bool isArgument(Identifier i) {
 	import std.array : front;
 	import std.uni : isAlpha;
-	return (i.front.isAlpha() && !i.isFunctionOrOperator && !i.isVector && !i.isMatrix);
+	import std.algorithm : any;
+	return (i.front.isAlpha() && !any!(a => a == i)(reservedWords));
 }
 
 // Outside because putting it inside will make the compiler cry about circular dependencies for some reason.
@@ -141,6 +145,12 @@ Classifier classify(Identifier i, Expression[] children) {
 	if (i.isVector && sum(children.map!(a => a.getNumericValue)) > 0) return Classifier.positiveVector;
 	if (i.isVector && sum(children.map!(a => a.getNumericValue)) < 0) return Classifier.negativeVector;
 	if (i.isMatrix) return Classifier.matrix;
+	// positive/negative definite matrix -> diag positive/negative too
+	if (i == "diag") return children[0].isPositive ? Classifier.positiveVector : Classifier.negativeVector;
+	// same for det and tr
+	if (i == "det" || i == "tr") return children[0].isPositive ? Classifier.positiveScalar : Classifier.negativeScalar;
+	// transposed vector
+	if (i == "'") return children[0].type;
 
 	import std.string : format;
 	assert (0, format("Failed to classify expression: '%s'", i));
@@ -158,6 +168,7 @@ unittest {
 	assert (E("vector", E("-1"), E("-2")).type == Classifier.negativeVector);
 	assert (E("vector", E("-1"), E("2")).type == Classifier.positiveVector);
 	assert (E("vector", E("1"), E("-2")).type == Classifier.negativeVector);
-	assert (E("matrix", E("+")).type == Classifier.pdMatrix);
-	assert (E("matrix", E("-")).type == Classifier.ndMatrix);
+	assert (E("diag", E("matrix", Classifier.psdMatrix)).type == Classifier.positiveVector);
+	assert (E("det", E("matrix", Classifier.psdMatrix)).type == Classifier.positiveScalar);
+	assert (E("'", E("vector", E("1"), E("-2"))).type == Classifier.negativeVector);
 }

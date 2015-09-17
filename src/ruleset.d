@@ -56,7 +56,12 @@ enum Rule[][Identifier] applicableRules = [
 	"^"		:	[&power],
 	"ln"	:	[&compositionRule],
 	"exp"	:	[&compositionRule],
+	"max"	:	[&compositionRule],
+	"min"	:	[&compositionRule],
+	"sqrt"	:	[&compositionRule],
+	"square":	[&compositionRule],
 	"abs"	:	[&emptyRule],
+	"norm"	:	[&emptyRule],
 ];
 
 /// The algorithm checking for convexity.
@@ -92,6 +97,10 @@ unittest {
 enum Result[string] functionAttributes = [
 	"ln"	:	Result(Curvature.concave, Monotonicity.nondecreasing),
 	"exp"	:	Result(Curvature.convex, Monotonicity.nondecreasing),
+	"max"	:	Result(Curvature.convex, Monotonicity.nondecreasing),
+	"min"	:	Result(Curvature.concave, Monotonicity.nondecreasing),
+	"sqrt"	:	Result(Curvature.concave, Monotonicity.nondecreasing),
+	"square":	Result(Curvature.convex, Monotonicity.unspecified),
 ];
 
 unittest {
