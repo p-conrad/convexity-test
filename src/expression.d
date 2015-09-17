@@ -12,6 +12,11 @@ struct Expression {
 		this.children = children;
 		this.type = classify(id, children);
 	}
+	this (Identifier id, Classifier type) {
+		this.id = id;
+		this.type = type;
+		this.children = [];
+	}
 }
 
 /// Returns: the number of cildren in an expression, namely the length of its children array.
@@ -37,11 +42,12 @@ Expression child(Expression e) { return e.left; }
  * Classification of an expression.
  * As long as no distinction is needed functions and operators will be grouped together in
  * functionSymbol for simplicity. positiveVector and negativeVector means that its length is smaller
- * or larger than zero. A vector of arguments shall be classified functionArgument. pdMatrix and
- * ndMatrix are positive/negative semidefinite matrices.
+ * or larger than zero. A vector of arguments shall be classified functionArgument. psdMatrix and
+ * nsdMatrix are positive/negative semidefinite matrices, matrix describes a matrix with no further
+ * known properties.
  */
 enum Classifier { functionSymbol, functionArgument, positiveScalar, negativeScalar, positiveVector,
-	negativeVector, pdMatrix, ndMatrix }
+	negativeVector, psdMatrix, nsdMatrix, matrix }
 
 bool isFunctionOrOperator(Classifier c) { return c == Classifier.functionSymbol; }
 bool isFunctionOrOperator(Expression e) { return isFunctionOrOperator(e.type); }
@@ -51,16 +57,17 @@ bool isScalar(Classifier c) { return  c == Classifier.positiveScalar || c == Cla
 bool isScalar(Expression e) { return isScalar(e.type); }
 bool isVector(Classifier c) { return c == Classifier.positiveVector || c == Classifier.negativeVector; }
 bool isVector(Expression e) { return isVector(e.type); }
-bool isMatrix(Classifier c) { return c == Classifier.pdMatrix || c == Classifier.ndMatrix; }
+bool isMatrix(Classifier c) { return c == Classifier.psdMatrix || c == Classifier.nsdMatrix
+									|| c == Classifier.matrix; }
 bool isMatrix(Expression e) { return isMatrix(e.type); }
 // Vectors either consist of constants or arguments - the latter shall be classified functionArgument.
 bool isConstant(Classifier c) { return c.isScalar || c.isVector || c.isMatrix; }
 bool isConstant(Expression e) { return isConstant(e.type); }
 bool isPositive(Classifier c) { return c == Classifier.positiveScalar || c == Classifier.positiveVector
-									|| c == Classifier.pdMatrix; }
+									|| c == Classifier.psdMatrix; }
 bool isPositive(Expression e) { return isPositive(e.type); }
 bool isNegative(Classifier c) { return c == Classifier.negativeScalar || c == Classifier.negativeVector
-									|| c == Classifier.ndMatrix; }
+									|| c == Classifier.nsdMatrix; }
 bool isNegative(Expression e) { return isNegative(e.type); }
 
 /// Returns: the numeric value of an expression identifier if it is a number. Raises an exception otherwise.
@@ -127,14 +134,13 @@ bool isMatrix(Identifier i) { return i == "matrix"; }
 Classifier classify(Identifier i, Expression[] children) {
 	if (i.isFunctionOrOperator) return Classifier.functionSymbol;
 	if (i.isArgument) return Classifier.functionArgument;
-	if (i.isVector && children[0].isArgument) { assert (children.length == 1); return Classifier.functionArgument; }
+	if (i.isVector && children[0].isArgument) return Classifier.functionArgument; }
 	if (i.isNumber && i.getNumericValue > 0) return Classifier.positiveScalar;
 	if (i.isNumber && i.getNumericValue < 0) return Classifier.negativeScalar;
 	import std.algorithm : sum, map;
 	if (i.isVector && sum(children.map!(a => a.getNumericValue)) > 0) return Classifier.positiveVector;
 	if (i.isVector && sum(children.map!(a => a.getNumericValue)) < 0) return Classifier.negativeVector;
-	if (i.isMatrix && children[0].id == "+") { assert (children.length == 1); return Classifier.pdMatrix; }
-	if (i.isMatrix && children[0].id == "-") { assert (children.length == 1); return Classifier.ndMatrix; }
+	if (i.isMatrix) return Classifier.matrix;
 
 	import std.string : format;
 	assert (0, format("Failed to classify expression: '%s'", i));
